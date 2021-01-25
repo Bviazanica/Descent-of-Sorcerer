@@ -5,71 +5,80 @@ import pygame
 from pygame.locals import *
 from data import *
 from data.gameobjects.vector2 import Vector2
+from player import Player
 
-# variables
-SCREEN_SIZE = width, height = 640, 480
+# globals
+SCREEN_SIZE = width, height = 800, 600
 BLACK = 0, 0, 0
 WHITE = 255, 255, 255
-FPS = 30  # frame rate
-
+FPS = 20  # frame rate
+screen = pygame.display.set_mode(SCREEN_SIZE)
+display = pygame.Surface((640, 480))
 # setup
 clock = pygame.time.Clock()
 pygame.init()
-
-# create the canvas
-screen = pygame.display.set_mode(SCREEN_SIZE)
-running = True
 
 # Title
 pygame.display.set_caption("Celestial")
 
 # images
-# background = pygame.image.load('data/images/backgrounds/bg_1.png').convert()
-playerImg = pygame.image.load('data/images/entities/hero/hero.png').convert()
-playerImg = pygame.transform.scale(playerImg, (36, 64))
+background = pygame.image.load(
+    'data/images/backgrounds/bg_1.png').convert()
 
 # player
-playerImgWidth = playerImg.get_width()
-playerImgHeight = playerImg.get_height()
-# starting position
-playerX = (width / 2) - (playerImgWidth / 2)
-playerY = height - playerImgHeight
-speed_x, speed_y = 0, 150
-
-# functions
-player_pos = Vector2(playerX, playerY)
-player_speed = 300
+player = Player()
+player.rect.x = (SCREEN_SIZE[0]/2 - player.playerImgWidth / 2)
+player.rect.y = (SCREEN_SIZE[1]/2 - player.playerImgHeight / 2)
+player_list = pygame.sprite.Group()
+player_list.add(player)
 
 
-def player(pos):
-    screen.blit(playerImg, pos)
+# variables
+scroll = [0, 0]
+true_scroll = [(SCREEN_SIZE[0]/2 - player.playerImgWidth / 2),
+               (SCREEN_SIZE[1]/2 - player.playerImgHeight / 2)]
+running = True
+# background
+bgWidth = background.get_width()
+bgHeight = background.get_height()
 
 
 # Game Loop
 while running:
-    screen.fill(BLACK)
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
 
             running = False
-
+    true_scroll[0] += (player.rect.x - true_scroll[0]-120)/10
+    print("TS 0 " + str(true_scroll[0]))
+    true_scroll[1] += (player.rect.y - true_scroll[1]-68)/10
+    scroll = [int(true_scroll[0]), int(true_scroll[1])]
+    display.fill(BLACK)
+    if scroll[1] > 200:
+        scroll[1] = 200
+    if scroll[1] < -200:
+        scroll[1] = -200
+    if scroll[0] < -200:
+        scroll[0] = -200
+    if scroll[0] > 200:  # ked je x hraca vacsie ako 67 tak sa posunie normalne
+        scroll[0] = 200
+    display.blit(background, (-scroll[0] - 200, -scroll[1]-200))
     pressed_keys = pygame.key.get_pressed()
-
     key_direction = Vector2(0, 0)
-
-    if pressed_keys[K_LEFT]:
+    if pressed_keys[K_LEFT] or pressed_keys[K_a]:
         key_direction.x = -1
-    elif pressed_keys[K_RIGHT]:
+    elif pressed_keys[K_RIGHT] or pressed_keys[K_d]:
         key_direction.x = +1
-    if pressed_keys[K_UP]:
+    if pressed_keys[K_UP] or pressed_keys[K_w]:
         key_direction.y = -1
-    elif pressed_keys[K_DOWN]:
+    elif pressed_keys[K_DOWN] or pressed_keys[K_s]:
         key_direction.y = +1
 
     key_direction.normalize()
-
     time_passed = clock.tick(FPS)
     time_passed_seconds = time_passed / 1000.0
-    player_pos += key_direction * player_speed * time_passed_seconds
-    player(player_pos)
-    pygame.display.flip()
+    player.update(key_direction, time_passed_seconds)
+    screen.blit(pygame.transform.scale(display, (SCREEN_SIZE)), (0, 0))
+    player_list.draw(screen)
+    pygame.display.update()
