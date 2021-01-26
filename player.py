@@ -26,3 +26,7 @@ class Player(pygame.sprite.Sprite):
             self.rect.x, self.rect.y) + (move * time * self.player_speed)
         self.rect.x = self.player_pos[0]
         self.rect.y = self.player_pos[1]
+
+    def draw(self, display, offsetX, offsetY):
+        display.blit(self.image, (self.rect.x -
+                                  offsetX, self.rect.y - offsetY))
