@@ -24,6 +24,14 @@ class Player(pygame.sprite.Sprite):
     def update(self, move, time):
         self.player_pos = Vector2(
             self.rect.x, self.rect.y) + (move * time * self.player_speed)
+        if(self.player_pos[0] < 0):
+            self.player_pos[0] = 0
+        if(self.player_pos[0] > 1120):
+            self.player_pos[0] = 1120
+        if(self.player_pos[1] < 0):
+            self.player_pos[1] = 0
+        if(self.player_pos[1] > 480):
+            self.player_pos[1] = 480
         self.rect.x = self.player_pos[0]
         self.rect.y = self.player_pos[1]
 
