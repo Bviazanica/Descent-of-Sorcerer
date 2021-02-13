@@ -16,25 +16,32 @@ class Player(pygame.sprite.Sprite):
         self.images.append(playerImg)
         self.image = self.images[0]
         self.rect = self.image.get_rect()
-        self.playerImgWidth = playerImg.get_width()
-        self.playerImgHeight = playerImg.get_height()
-        self.player_pos = Vector2(0, 0)
-        self.player_speed = 200
 
+        # speed & position
+        self.position = Vector2(0, 0)
+        self.speed = 250
+
+        # camera borders
+        self.top_border, self.bottom_border = -268, 746
+        self.left_border, self.right_border = -380, 1500
+        self.player_border_min_y, self.player_border_max_y = 120, 640
+
+    # update position
     def update(self, move, time):
-        self.player_pos = Vector2(
-            self.rect.x, self.rect.y) + (move * time * self.player_speed)
-        if(self.player_pos[0] < 0):
-            self.player_pos[0] = 0
-        if(self.player_pos[0] > 1120):
-            self.player_pos[0] = 1120
-        if(self.player_pos[1] < 0):
-            self.player_pos[1] = 0
-        if(self.player_pos[1] > 480):
-            self.player_pos[1] = 480
-        self.rect.x = self.player_pos[0]
-        self.rect.y = self.player_pos[1]
+        self.position = Vector2(
+            self.rect.x, self.rect.y) + (move * time * self.speed)
+        if(self.position[0] < self.left_border):
+            self.position[0] = self.left_border
+        if(self.position[0] > self.right_border - self.rect.width):
+            self.position[0] = self.right_border - self.rect.width
+        if(self.position[1] < self.player_border_min_y):
+            self.position[1] = self.player_border_min_y
+        if(self.position[1] > self.player_border_max_y - self.rect.height):
+            self.position[1] = self.player_border_max_y - self.rect.height
+        self.rect.x = self.position[0]
+        self.rect.y = self.position[1]
 
-    def draw(self, display, offsetX, offsetY):
+    # drive player to canvas
+    def draw(self, display, offset_x, offset_y):
         display.blit(self.image, (self.rect.x -
-                                  offsetX, self.rect.y - offsetY))
+                                  offset_x, self.rect.y - offset_y))

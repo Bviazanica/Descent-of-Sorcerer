@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import pygame
-vec = pygame.math.Vector2
+from data.gameobjects.vector2 import Vector2 as vec
 
 
 class Camera:
@@ -18,6 +18,8 @@ class Camera:
     def scroll(self):
         self.method.scroll()
 
+# abstract base class for camera
+
 
 class CamScroll(ABC):
     def __init__(self, camera, player):
@@ -28,18 +30,22 @@ class CamScroll(ABC):
     def scroll(self):
         pass
 
+# camera which follows player
+
 
 class Follow(CamScroll):
     def __init__(self, camera, player):
         CamScroll.__init__(self, camera, player)
 
     def scroll(self):
-        self.camera.offset_float.x += (self.player.player_pos[0] -
+        self.camera.offset_float.x += (self.player.position[0] -
                                        self.camera.offset_float.x + self.camera.CONST[0])
-        self.camera.offset_float.y += (self.player.player_pos[1] -
+        self.camera.offset_float.y += (self.player.position[1] -
                                        self.camera.offset_float.y + self.camera.CONST[1])
         self.camera.offset.x, self.camera.offset.y = int(
             self.camera.offset_float.x), int(self.camera.offset_float.y)
+
+# camera which follows player, but can go to edges
 
 
 class Border(CamScroll):
@@ -53,12 +59,19 @@ class Border(CamScroll):
                                        self.camera.offset_float.y + self.camera.CONST.y)
         self.camera.offset.x, self.camera.offset.y = int(
             self.camera.offset_float.x), int(self.camera.offset_float.y)
+        # x axis handle
         self.camera.offset.x = max(
             self.player.left_border, self.camera.offset.x)
         self.camera.offset.x = min(
             self.camera.offset.x, self.player.right_border - self.camera.DISPLAY_W)
+        # y axis handle
+        self.camera.offset.y = max(
+            self.player.top_border, self.camera.offset.y)
+        self.camera.offset.y = min(
+            self.camera.offset.y, self.player.bottom_border - self.camera.DISPLAY_H)
 
 
+# camera with automatic linear movement
 class Auto(CamScroll):
     def __init__(self, camera, player):
         CamScroll.__init__(self, camera, player)
