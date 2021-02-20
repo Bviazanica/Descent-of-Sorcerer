@@ -18,15 +18,16 @@ class Boss(pygame.sprite.Sprite):
         self.health_points = 100
         # borders
 
-        # position
-        self.position = Vector2(500, 400)
-
         # speed
         self.speed = 200
 
-    def update(self, offset_x, offset_y):
-        self.rect.x = self.position[0] - offset_x
-        self.rect.y = self.position[1] - offset_y
+        # healthpoints
+        self.health_points = 300
 
-    def draw(self, display):
+    def update(self, move, time, offset_x, offset_y):
+        # self.rect = Vector2(
+        #     self.rect.x, self.rect.y) + (move * time * self.speed)
+        self.rect.x, self.rect.y = 500 - offset_x, 500-offset_y
+
+    def draw(self, display, offset_x, offset_y):
         display.blit(self.image, (self.rect.x, self.rect.y))

@@ -14,22 +14,22 @@ class Enemy(pygame.sprite.Sprite):
         self.images.append(spiderImg)
         self.image = self.images[0]
         self.rect = self.image.get_rect()
+        self.omegalul = 0.0
+        self.rect.x, self.rect.y = 300, 300
         # hp
         self.health_points = 100
         # borders
 
-        # position
-        self.position = Vector2(400, 400)
         # speed
         self.speed = 200
 
-    def update(self, offset_x, offset_y):
-        # self.position = Vector2(
-        #     self.rect.x - offset_y, self.rect.y - offset_y)
-        # self.rect.x = self.position[0]
-        # self.rect.y = self.position[1]
-        self.rect.x = self.position[0] - offset_x
-        self.rect.y = self.position[1] - offset_y
+    def update(self, move, time, offset_x, offset_y):
+        # self.rect = Vector2(
+        #     self.rect.x, self.rect.y) + (move * time * self.speed)
+        self.rect.x, self.rect.y = 300 - offset_x, 300-offset_y
 
-    def draw(self, display):
+        print(self.rect)
+
+    def draw(self, display, offset_x, offset_y):
         display.blit(self.image, (self.rect.x, self.rect.y))
+        pygame.draw.rect(display, (255, 0, 0), self.rect)
