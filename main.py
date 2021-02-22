@@ -14,7 +14,7 @@ from data.camera.camera import *
 # globals
 BLACK = 0, 0, 0
 WHITE = 255, 255, 255
-FPS = 20  # frame rate
+FPS = 30  # frame rate
 SCREEN_SIZE = width, height = 800, 600
 
 # window & canvas
@@ -34,60 +34,56 @@ background = pygame.image.load(
 bgWidth = background.get_width()
 bgHeight = background.get_height()
 
-# player
+
+# entities
 player = Player()
-player_list = pygame.sprite.Group()
-player_list.add(player)
-# player.rect.x = (SCREEN_SIZE[0]/2 - player.playerImgWidth / 2)
-# player.rect.y = (SCREEN_SIZE[1]/2 - player.playerImgHeight / 2)
-
-# enemies
 enemy = Enemy()
-enemy_list = pygame.sprite.Group()
-enemy_list.add(enemy)
-
-# boss
 boss = Boss()
-boss_list = pygame.sprite.Group()
-boss_list.add(boss)
-
-# projectiles
 projectiles = []
 
 # variables
+collision_objects = []
+projectile_collision = []
 running = True
 
-#camera & methods
+# camera & methods
 camera = Camera(player)
 follow = Follow(camera, player)
 border = Border(camera, player)
 auto = Auto(camera, player)
 camera.setmethod(border)
 
+collision_objects.extend([enemy.hitbox, boss.hitbox])
+projectile_collision.extend([enemy, boss])
 
 # Game Loop
 while running:
     canvas.blit(background, (0 - camera.offset.x +
                              camera.CONST[0], 0 - camera.offset.y + camera.CONST[1]))
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
+    # frame interval
+    time_passed = clock.tick(FPS)
+    time_passed_seconds = time_passed / 1000.0
+
     pressed_keys = pygame.key.get_pressed()
-    key_direction = Vector2(0, 0)
+    movement = Vector2(0, 0)
     # movement
     if pressed_keys[K_LEFT] or pressed_keys[K_a]:
-        key_direction.x = -1
+        movement.x = -1
         player.left = True
         player.right = False
     elif pressed_keys[K_RIGHT] or pressed_keys[K_d]:
-        key_direction.x = +1
+        movement.x = +1
         player.right = True
         player.left = False
     if pressed_keys[K_UP] or pressed_keys[K_w]:
-        key_direction.y = -1
+        movement.y = -1
     elif pressed_keys[K_DOWN] or pressed_keys[K_s]:
-        key_direction.y = +1
+        movement.y = +1
 
     if pressed_keys[K_SPACE] and len(projectiles) == 0:
         if player.right:
@@ -95,47 +91,43 @@ while running:
         else:
             direction = -1
         projectile = Projectile(
-            Vector2(player.position.x - camera.offset.x, player.position.y - camera.offset.y), direction)
+            Vector2(player.rect.x + player.rect.w // 2, player.rect.y + player.rect.h // 2), direction)
         projectiles.append(projectile)
+
     enemy_direction = Vector2(0, 0)
     enemy_direction.normalise()
-    key_direction.normalize()
+    movement.normalize()
 
-    time_passed = clock.tick(60)
-    time_passed_seconds = time_passed / 1000.0
-    random_rect = pygame.Rect(200 - camera.offset.x,
-                              200 - camera.offset.y, 40, 80)
-    enemy.update(enemy_direction, time_passed_seconds,
-                 camera.offset.x, camera.offset.y)
-    boss.update(enemy_direction, time_passed_seconds,
-                camera.offset.x, camera.offset.y)
-
-    player.update(key_direction, time_passed_seconds,
-                  camera.offset.x, camera.offset.y)
+    player.update(canvas, time_passed_seconds, movement,
+                  collision_objects, camera.offset.x, camera.offset.y)
     if projectiles:
         for projectile in projectiles:
             if projectile.rect.x > 1500 or projectile.rect.x < -380:
                 projectiles.pop(projectiles.index(projectile))
             else:
-                projectile.update(camera.offset.x, camera.offset.y)
-                print("tu som ")
+                for obj in projectile_collision:
+                    if projectile.rect.x - camera.offset.x > obj.hitbox[0] and projectile.rect.x - camera.offset.x < obj.hitbox[0] + obj.hitbox.w:
+                        if projectile.rect.y - camera.offset.y < obj.hitbox[1] + obj.hitbox[3] and projectile.rect.y + projectile.rect.h - camera.offset.y > obj.hitbox[1]:
+                            obj.hit()
+                            projectiles.pop(projectiles.index(projectile))
 
-    # print(camera.offset)
-    camera.scroll()
+                        else:
+                            projectile.update(
+                                player.rect.x - camera.offset.x, player.rect.y - camera.offset.y, time_passed_seconds)
+
+                    else:
+
+                        projectile.update(
+                            player.rect.x - camera.offset.x, player.rect.y - camera.offset.y, time_passed_seconds)
+
     if projectiles:
         for projectile in projectiles:
-            projectile.draw(canvas)
-    player.draw(canvas,
-                camera.offset.x, camera.offset.y)
-
-    if player.hitbox.colliderect(enemy.rect):
-        print("hit")
-    else:
-        print("not hit")
+            projectile.draw(canvas, camera.offset.x, camera.offset.y)
 
     boss.draw(canvas, camera.offset.x, camera.offset.y)
     enemy.draw(canvas, camera.offset.x, camera.offset.y)
-    pygame.draw.rect(canvas, (255, 0, 0), random_rect)
+    camera.scroll()
+    player.draw(canvas, camera.offset.x, camera.offset.y)
 
     window.blit(canvas, (0, 0))
     pygame.display.update()
