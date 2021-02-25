@@ -2,6 +2,7 @@ import os
 import sys
 import pygame
 from pygame.locals import *
+from entity import *
 from data.gameobjects.vector2 import Vector2
 
 
@@ -22,7 +23,14 @@ class Player():
         self.left = False
         self.right = True
 
-        # speed & position
+        # cooldowns
+        self.cooldowns = {'melee': 2000, 'shoot': 2000}
+
+        # attack damage
+        self.shoot_damage = 10
+        self.melee_damage = 25
+
+        # speed
         self.speed = 250
 
         # healthpoints
@@ -34,68 +42,78 @@ class Player():
         self.player_border_min_y, self.player_border_max_y = 120, 640
 
     # update position
-    def update(self, display, time, movement, obstacles, offset_x, offset_y):
-        self.rect, self.collisions = self.move(
-            self.rect, movement, obstacles, time)
 
-    def check_collision(self, rect, obj_list):
-        self.collisions = []
-        for obj in obj_list:
-            if self.rect.colliderect(obj):
-                self.collisions.append(obj)
-        return self.collisions
+    def update(self, display, time, movement, obstacles, offset_x, offset_y):
+        self.rect, collisions = self.move(
+            self.rect, movement, obstacles, time)
+        self.hitbox = pygame.Rect(
+            self.rect.x - offset_x, self.rect.y - offset_y, 36, 64)
 
     def move(self, rect, movement, obstacles, time):
-        self.collision_types = {'top': False, 'bottom': False,
-                                'left': False, 'right': False}
+        collision_types = {'top': False, 'bottom': False,
+                           'left': False, 'right': False}
 
         self.rect.x += movement[0] * time * self.speed
         # collisions on x axis
-        self.collision_list = self.check_collision(self.rect, obstacles)
+        collision_list = check_collision(self.rect, obstacles)
         # we check if we collide with obstacle, first we check X axis coords, then y axis
         # this way we can correctly determine where the collision ocurred
-        for col in self.collision_list:
+        for col in collision_list:
             if movement[0] > 0:
                 # rect build in method allows us to set rect to side of another rect
                 self.rect.right = col.left
-                self.collision_types['right'] = True
+                collision_types['right'] = True
             elif movement[0] < 0:
                 # rect build in method allows us to set rect to side of another rect
                 self.rect.left = col.right
-                self.collision_types['left'] = True
+                collision_types['left'] = True
+
         if(self.rect.x < self.left_border):
             self.rect.x = self.left_border
         if(self.rect.x > self.right_border - self.rect.width):
             self.rect.x = self.right_border - self.rect.width
+
         self.rect.y += movement[1] * time * self.speed
         # collisions on y axis
-        self.collision_list = self.check_collision(self.rect, obstacles)
-        for col in self.collision_list:
+        collision_list = check_collision(self.rect, obstacles)
+        for col in collision_list:
             if movement[1] > 0:
                 # rect build in method allows us to set rect to side of another rect
                 self.rect.bottom = col.top
-                self.collision_types['bottom'] = True
+                collision_types['bottom'] = True
             elif movement[1] < 0:
                 # rect build in method allows us to set rect to side of another rect
                 self.rect.top = col.bottom
-                self.collision_types['top'] = True
+                collision_types['top'] = True
 
         if(self.rect.y < self.player_border_min_y):
             self.rect.y = self.player_border_min_y
         if(self.rect.y > self.player_border_max_y - self.rect.height):
             self.rect.y = self.player_border_max_y - self.rect.height
-        return self.rect, self.collision_types
+
+        return self.rect, collision_types
 
     # draw player to canvas
-
     def draw(self, display, offset_x, offset_y):
-        display.blit(
-            self.image, (self.rect.x - offset_x, self.rect.y - offset_y))
 
-        self.hitbox = pygame.Rect(
-            self.rect.x - offset_x, self.rect.y - offset_y, self.player_img.get_width(), self.player_img.get_height())
+        # pygame.draw.rect(display, (255, 255, 0), self.rect, 2)
         pygame.draw.rect(display, (255, 0, 0), self.hitbox, 2)
-    # basic attack
 
     def fire(self):
+        self.cooldown = True
         print("attacking!")
+    # basic attack
+
+    def melee_attack(self, display, obstacles, offset_x, offset_y):
+        if self.right:
+            direction = 1
+        else:
+            direction = -1
+        attack = pygame.Rect(self.rect.x - offset_x + (self.rect.w*direction), self.rect.y - offset_y,
+                             36, 64)
+
+        pygame.draw.rect(display, (255, 0, 0), attack)
+        collision_list = check_collision(attack, obstacles)
+        for col in collision_list:
+            print(col)
+            col.hit(self.melee_damage)

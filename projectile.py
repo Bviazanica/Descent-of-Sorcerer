@@ -24,6 +24,8 @@ class Projectile(object):
         self.hitbox = pygame.Rect(
             self.rect.x, self.rect.y, 5, 5)
 
+        self.damage = 10
+
         self.facing = facing
         self.speed = 250 * facing
 
