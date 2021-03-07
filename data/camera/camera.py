@@ -38,9 +38,9 @@ class Follow(CamScroll):
         CamScroll.__init__(self, camera, player)
 
     def scroll(self):
-        self.camera.offset_float.x += (self.player.position[0] -
+        self.camera.offset_float.x += (self.player.rect.x -
                                        self.camera.offset_float.x + self.camera.CONST[0])
-        self.camera.offset_float.y += (self.player.position[1] -
+        self.camera.offset_float.y += (self.player.rect.y -
                                        self.camera.offset_float.y + self.camera.CONST[1])
         self.camera.offset.x, self.camera.offset.y = int(
             self.camera.offset_float.x), int(self.camera.offset_float.y)

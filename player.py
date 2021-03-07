@@ -46,8 +46,8 @@ class Player():
     def update(self, display, time, movement, obstacles, offset_x, offset_y):
         self.rect, collisions = self.move(
             self.rect, movement, obstacles, time)
-        self.hitbox = pygame.Rect(
-            self.rect.x - offset_x, self.rect.y - offset_y, 36, 64)
+
+        print(collisions)
 
     def move(self, rect, movement, obstacles, time):
         collision_types = {'top': False, 'bottom': False,
@@ -61,11 +61,11 @@ class Player():
         for col in collision_list:
             if movement[0] > 0:
                 # rect build in method allows us to set rect to side of another rect
-                self.rect.right = col.left
+                self.rect.right = col.hitbox.left
                 collision_types['right'] = True
             elif movement[0] < 0:
                 # rect build in method allows us to set rect to side of another rect
-                self.rect.left = col.right
+                self.rect.left = col.hitbox.right
                 collision_types['left'] = True
 
         if(self.rect.x < self.left_border):
@@ -79,11 +79,11 @@ class Player():
         for col in collision_list:
             if movement[1] > 0:
                 # rect build in method allows us to set rect to side of another rect
-                self.rect.bottom = col.top
+                self.rect.bottom = col.hitbox.top
                 collision_types['bottom'] = True
             elif movement[1] < 0:
                 # rect build in method allows us to set rect to side of another rect
-                self.rect.top = col.bottom
+                self.rect.top = col.hitbox.bottom
                 collision_types['top'] = True
 
         if(self.rect.y < self.player_border_min_y):
@@ -95,8 +95,10 @@ class Player():
 
     # draw player to canvas
     def draw(self, display, offset_x, offset_y):
-
-        # pygame.draw.rect(display, (255, 255, 0), self.rect, 2)
+        display.blit(self.image, (self.rect.x -
+                                  offset_x, self.rect.y - offset_y))
+        self.hitbox = pygame.Rect(
+            (self.rect.x - offset_x, self.rect.y - offset_y, self.player_img.get_width(), self.player_img.get_height()))
         pygame.draw.rect(display, (255, 0, 0), self.hitbox, 2)
 
     def fire(self):
@@ -109,10 +111,9 @@ class Player():
             direction = 1
         else:
             direction = -1
-        attack = pygame.Rect(self.rect.x - offset_x + (self.rect.w*direction), self.rect.y - offset_y,
+        attack = pygame.Rect(self.rect.x + (self.rect.w*direction), self.rect.y,
                              36, 64)
 
-        pygame.draw.rect(display, (255, 0, 0), attack)
         collision_list = check_collision(attack, obstacles)
         for col in collision_list:
             print(col)

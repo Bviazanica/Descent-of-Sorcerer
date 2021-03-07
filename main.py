@@ -54,8 +54,7 @@ collision_objects = []
 projectile_collision = []
 running = True
 current_time = 0
-collision_objects.extend([enemy.hitbox, boss.hitbox])
-projectile_collision.extend([enemy, boss])
+collision_objects.extend([enemy, boss])
 
 # player cooldowns
 melee_attack_time = 0
@@ -63,9 +62,8 @@ range_attack_time = 0
 
 # Game Loop
 while running:
+    canvas.fill(BLACK)
     current_time = pygame.time.get_ticks()
-    canvas.blit(background, (0 - camera.offset.x +
-                             camera.CONST[0], 0 - camera.offset.y + camera.CONST[1]))
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -93,10 +91,7 @@ while running:
 
     # if pressed_keys[K_SPACE] and current_time - range_attack_time > player.cooldowns['range']:
         # range_attack_time = pygame.time.get_ticks()
-    #     if player.right:
-    #         direction = 1
-    #     else:
-    #         direction = -1
+
     #     projectile = Projectile(
     #         Vector2(player.rect.x + player.rect.w // 2, player.rect.y + player.rect.h // 2), direction)
     #     projectiles.append(projectile)
@@ -134,10 +129,12 @@ while running:
 
     player.update(canvas, time_passed_seconds, movement,
                   collision_objects, camera.offset.x, camera.offset.y)
-
+    enemy.update()
+    boss.update()
+    # canvas.blit(background, (0 - camera.offset.x +
+    #                          camera.CONST[0], 0 - camera.offset.y + camera.CONST[1]))
     for enemy in projectile_collision:
-        enemy.update(camera.offset.x, camera.offset.y)
-        enemy.draw(canvas)
+        enemy.draw(canvas, camera.offset.x, camera.offset.y)
     camera.scroll()
     player.draw(canvas, camera.offset.x, camera.offset.y)
 
