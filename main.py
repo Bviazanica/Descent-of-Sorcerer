@@ -2,13 +2,14 @@
 import os
 import sys
 import pygame
+import pygame_ai as pai
 from pygame.locals import *
 from data import *
 from data.gameobjects.vector2 import Vector2
 from player import Player
 from boss import Boss
+from circle import CircleNPC
 from enemy import Enemy
-from projectile import Projectile
 from data.camera.camera import *
 
 # globals
@@ -39,7 +40,6 @@ bgHeight = background.get_height()
 player = Player()
 enemy = Enemy()
 boss = Boss()
-projectiles = []
 
 
 # camera & methods
@@ -60,6 +60,12 @@ collision_objects.extend([enemy, boss])
 melee_attack_time = 0
 range_attack_time = 0
 
+circle = CircleNPC(pos=(100, 100))
+circle.ai = pai.steering.kinematic.Wander(
+    circle, 50, 15, 20)
+drag = pai.steering.kinematic.Drag(15)
+
+
 # Game Loop
 while running:
     canvas.fill(BLACK)
@@ -72,7 +78,6 @@ while running:
     # frame interval
     time_passed = clock.tick(FPS)
     time_passed_seconds = time_passed / 1000.0
-
     pressed_keys = pygame.key.get_pressed()
     movement = Vector2(0, 0)
     # movement
@@ -89,54 +94,34 @@ while running:
     elif pressed_keys[K_DOWN] or pressed_keys[K_s]:
         movement.y = +1
 
-    # if pressed_keys[K_SPACE] and current_time - range_attack_time > player.cooldowns['range']:
-        # range_attack_time = pygame.time.get_ticks()
-
-    #     projectile = Projectile(
-    #         Vector2(player.rect.x + player.rect.w // 2, player.rect.y + player.rect.h // 2), direction)
-    #     projectiles.append(projectile)
+    if pressed_keys[K_SPACE] and current_time - range_attack_time > player.cooldowns['range']:
+        range_attack_time = pygame.time.get_ticks()
+        player.fire(canvas, collision_objects,
+                    camera.offset.x, camera.offset.y)
 
     if pressed_keys[K_f] and current_time - melee_attack_time > player.cooldowns['melee']:
         melee_attack_time = pygame.time.get_ticks()
-        player.melee_attack(canvas, projectile_collision,
+        player.melee_attack(canvas, collision_objects,
                             camera.offset.x, camera.offset.y)
 
     enemy_direction = Vector2(0, 0)
     enemy_direction.normalise()
     movement.normalize()
 
-    # if projectiles:
-    #     for projectile in projectiles:
-    #         if projectile.rect.x > 1500 or projectile.rect.x < -380:
-    #             projectiles.pop(projectiles.index(projectile))
-    #         else:
-    #             for obj in projectile_collision:
-    #                 if projectile.rect.x - camera.offset.x > obj.hitbox[0] and projectile.rect.x - camera.offset.x < obj.hitbox[0] + obj.hitbox.w:
-    #                     if projectile.rect.y - camera.offset.y < obj.hitbox[1] + obj.hitbox[3] and projectile.rect.y + projectile.rect.h - camera.offset.y > obj.hitbox[1]:
-    #                         obj.hit(projectile.damage)
-    #                         projectiles.pop(projectiles.index(projectile))
-
-    #                     else:
-    #                         projectile.update(
-    #                             player.rect.x - camera.offset.x, player.rect.y - camera.offset.y, time_passed_seconds)
-    #                 else:
-    #                     projectile.update(
-    #                         player.rect.x- camera.offset.x, player.rect.y - camera.offset.y, time_passed_seconds)
-
-    # if projectiles:
-    #     for projectile in projectiles:
-    #         projectile.draw(canvas, camera.offset.x, camera.offset.y)
-
     player.update(canvas, time_passed_seconds, movement,
                   collision_objects, camera.offset.x, camera.offset.y)
     enemy.update()
     boss.update()
-    # canvas.blit(background, (0 - camera.offset.x +
-    #                          camera.CONST[0], 0 - camera.offset.y + camera.CONST[1]))
-    for enemy in projectile_collision:
-        enemy.draw(canvas, camera.offset.x, camera.offset.y)
+    circle.update(time_passed_seconds)
+    canvas.blit(background, (int(0 - camera.offset.x +
+                                 camera.CONST[0]), int(0 - camera.offset.y + camera.CONST[1])))
+    circle.steer(drag.get_steering(circle), time_passed_seconds)
     camera.scroll()
     player.draw(canvas, camera.offset.x, camera.offset.y)
+    boss.draw(canvas, camera.offset.x, camera.offset.y)
+    enemy.draw(canvas, camera.offset.x, camera.offset.y)
+    canvas.blit(circle.image, (int(circle.rect.x - camera.offset.x),
+                               int(circle.rect.y - camera.offset.y)))
 
     window.blit(canvas, (0, 0))
     pygame.display.update()

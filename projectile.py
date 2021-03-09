@@ -1,6 +1,6 @@
 import pygame
 from pygame.locals import *
-
+from entity import *
 from data.gameobjects.vector2 import Vector2
 
 
@@ -17,7 +17,7 @@ class Projectile(object):
         self.rect = self.image.get_rect()
 
         self.player_position = player_position
-        self.change = 0
+
         self.rect.x = player_position[0]
         self.rect.y = player_position[1]
 
@@ -26,11 +26,18 @@ class Projectile(object):
 
         self.damage = 10
 
-        self.facing = facing
-        self.speed = 250 * facing
+        self.speed = 350 * facing
 
-    def update(self, x, y, time):
-        self.rect.x = self.rect.x + (self.speed * time)
+        self.destroy = False
+
+    def update(self, time, collision_objects):
+        collision_list = check_collision(self.rect, collision_objects)
+        if collision_list:
+            for col in collision_list:
+                col.hit(self.damage)
+                self.destroy = True
+            return self.destroy
+        self.rect.x += (self.speed * time)
 
     def draw(self, display, offset_x, offset_y):
         self.hitbox = pygame.Rect(

@@ -4,6 +4,7 @@ import pygame
 from pygame.locals import *
 from entity import *
 from data.gameobjects.vector2 import Vector2
+from projectile import Projectile
 
 
 class Player():
@@ -23,8 +24,11 @@ class Player():
         self.left = False
         self.right = True
 
+        # position
+        self.position = (300, 400)
+
         # cooldowns
-        self.cooldowns = {'melee': 2000, 'shoot': 2000}
+        self.cooldowns = {'melee': 2000, 'range': 2000}
 
         # attack damage
         self.shoot_damage = 10
@@ -32,6 +36,9 @@ class Player():
 
         # speed
         self.speed = 250
+
+        # projectiles
+        self.projectiles = []
 
         # healthpoints
         self.health_points = 100
@@ -42,12 +49,15 @@ class Player():
         self.player_border_min_y, self.player_border_max_y = 120, 640
 
     # update position
-
     def update(self, display, time, movement, obstacles, offset_x, offset_y):
+        if(self.projectiles):
+            for projectile in self.projectiles:
+                destroy = projectile.update(time, obstacles)
+                if destroy or projectile.rect.x > 1500 or projectile.rect.x < -380:
+                    self.projectiles.pop(self.projectiles.index(projectile))
         self.rect, collisions = self.move(
             self.rect, movement, obstacles, time)
-
-        print(collisions)
+        self.position = self.rect.x, self.rect.y
 
     def move(self, rect, movement, obstacles, time):
         collision_types = {'top': False, 'bottom': False,
@@ -95,16 +105,24 @@ class Player():
 
     # draw player to canvas
     def draw(self, display, offset_x, offset_y):
+        if(self.projectiles):
+            for projectile in self.projectiles:
+                projectile.draw(display, offset_x, offset_y)
+
         display.blit(self.image, (self.rect.x -
                                   offset_x, self.rect.y - offset_y))
         self.hitbox = pygame.Rect(
             (self.rect.x - offset_x, self.rect.y - offset_y, self.player_img.get_width(), self.player_img.get_height()))
         pygame.draw.rect(display, (255, 0, 0), self.hitbox, 2)
 
-    def fire(self):
-        self.cooldown = True
-        print("attacking!")
-    # basic attack
+    def fire(self, display, obstacles, offset_x, offset_y):
+        if self.right:
+            direction = 1
+        else:
+            direction = -1
+        projectile = Projectile(
+            Vector2(self.rect.x + self.rect.w // 2, self.rect.y + self.rect.h // 2), direction)
+        self.projectiles.append(projectile)
 
     def melee_attack(self, display, obstacles, offset_x, offset_y):
         if self.right:
@@ -113,7 +131,6 @@ class Player():
             direction = -1
         attack = pygame.Rect(self.rect.x + (self.rect.w*direction), self.rect.y,
                              36, 64)
-
         collision_list = check_collision(attack, obstacles)
         for col in collision_list:
             print(col)

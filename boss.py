@@ -47,9 +47,9 @@ class Boss():
 
         # healthbar
         pygame.draw.rect(display, (255, 0, 0),
-                         (self.hitbox[0], self.hitbox[1] - 15, 75, 10))
+                         (self.hitbox[0] - offset_x, self.hitbox[1] - 15 - offset_y, 75, 10))
         pygame.draw.rect(display, (0, 200, 0),
-                         (self.hitbox[0], self.hitbox[1] - 15, self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points)), 10))
+                         (self.hitbox[0] - offset_x, self.hitbox[1] - 15 - offset_y, self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points)), 10))
 
     def hit(self, damage):
         self.health_points -= damage
