@@ -19,6 +19,8 @@ class Boss():
 
         self.rect.x, self.rect.y = 200, 500
 
+        self.type = 'Boss'
+
         # hitbox
         self.hitbox = pygame.Rect(
             self.rect.x, self.rect.y, 75, 100)
@@ -50,6 +52,18 @@ class Boss():
                          (self.hitbox[0] - offset_x, self.hitbox[1] - 15 - offset_y, 75, 10))
         pygame.draw.rect(display, (0, 200, 0),
                          (self.hitbox[0] - offset_x, self.hitbox[1] - 15 - offset_y, self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points)), 10))
+
+    def shoot(self, type):
+        pass
+
+    def summon(self, type):
+        pass
+
+    def whirlwind(self):
+        pass
+
+    def heal(self):
+        pass
 
     def hit(self, damage):
         self.health_points -= damage

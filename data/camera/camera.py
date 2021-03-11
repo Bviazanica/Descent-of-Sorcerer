@@ -1,5 +1,6 @@
-from abc import ABC, abstractmethod
 import pygame
+from data.globals.globals import *
+from abc import ABC, abstractmethod
 from data.gameobjects.vector2 import Vector2 as vec
 
 
