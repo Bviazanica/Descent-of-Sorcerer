@@ -1,7 +1,9 @@
-import pygame
-from pygame.locals import *
-from data.gameobjects.vector2 import Vector2
 import random
+import pygame
+from entity import *
+from pygame.locals import *
+from projectile import Projectile
+Vector2 = pygame.math.Vector2
 
 
 class Boss():
@@ -17,26 +19,46 @@ class Boss():
         # rect
         self.rect = self.image.get_rect(width=(75), height=(100))
 
-        self.rect.x, self.rect.y = 200, 500
+        self.rect.center = 200, 400
 
         self.type = 'Boss'
 
         # hitbox
         self.hitbox = pygame.Rect(
             self.rect.x, self.rect.y, 75, 100)
+
+        self.cooldowns = {'summon': 15000, 'whirlwind': 10000, 'orbs': 5000}
+
         # speed
         self.speed = 200
-
         # healthpoints
         self.max_hp = 300
         self.health_points = 300
 
         self.hp_bar_width = self.rect.w
 
-        # determine whether we render the entity
-        self.visible = True
+        self.projectiles = []
 
-    def update(self):
+        self.desired = Vector2(0, 0)
+
+        self.ready = True
+
+    def update(self, display, time, movement, obstacles):
+        if(self.projectiles):
+            for projectile in self.projectiles:
+                collision_list = check_collision(
+                    projectile.rect, obstacles, 'Boss')
+                if len(collision_list):
+                    for col in collision_list:
+                        col.hit(projectile.damage)
+                    self.projectiles.pop(self.projectiles.index(projectile))
+
+                elif projectile.rect.x > 1500 or projectile.rect.x < -380:
+                    self.projectiles.pop(self.projectiles.index(projectile))
+
+                else:
+                    projectile.update(time)
+
         self.hitbox[0] = self.rect.x + 10
         self.hitbox[1] = self.rect.y + 35
 
@@ -53,17 +75,25 @@ class Boss():
         pygame.draw.rect(display, (0, 200, 0),
                          (self.hitbox[0] - offset_x, self.hitbox[1] - 15 - offset_y, self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points)), 10))
 
-    def shoot(self, type):
-        pass
+        if(self.projectiles):
+            for projectile in self.projectiles:
+                projectile.draw(display, offset_x, offset_y)
 
-    def summon(self, type):
-        pass
+    def shoot(self, target, time):
+        self.desired = target - \
+            Vector2(self.hitbox.centerx, self.hitbox.centery)
+        self.desired.normalize_ip()
+        projectile = Projectile(self.hitbox.center, 1, self.desired, 'boss')
+        self.projectiles.append(projectile)
 
-    def whirlwind(self):
-        pass
+    def whirlwind(self, player):
+        if is_close(self.hitbox, player.hitbox, 200):
+            self.damage = 20
+            player.hit(self.damage)
+            # maybe throwback the player in opposite vector
 
-    def heal(self):
-        pass
+    def heal(self, heal_amount):
+        self.health_points += heal_amount
 
     def hit(self, damage):
         self.health_points -= damage

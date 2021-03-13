@@ -3,6 +3,7 @@ import os
 import sys
 import pygame
 from data import *
+from entity import *
 from boss import Boss
 from enemy import Enemy
 from player import Player
@@ -31,16 +32,14 @@ bgHeight = background.get_height()
 
 # entities
 entities = []
-start_enemies = 4
 
 player = Player()
 entities.append(player)
 boss = Boss()
 entities.append(boss)
 
-for enemy in range(start_enemies):
-    enemy = Enemy(randint(100, 746), 200)
-    entities.append(enemy)
+# mobs = summon(Enemy, 500, 200, 1)
+# entities.extend(mobs)
 
 # camera & methods
 camera = Camera(player)
@@ -53,9 +52,10 @@ running = True
 current_time = 0
 
 # player cooldowns
-melee_attack_time = 0
-range_attack_time = 0
+attack_with_delay = USEREVENT
 
+pygame.time.set_timer(attack_with_delay, 2000)
+melee_attack_time = whirlwind_activation_time = range_attack_time = -100000
 
 # Game Loop
 while running:
@@ -71,10 +71,6 @@ while running:
     time_passed_seconds = time_passed / 1000.0
     pressed_keys = pygame.key.get_pressed()
     movement = Vector2(0, 0)
-
-    for entity in entities:
-        if entity.health_points <= 0:
-            entities.pop(entities.index(entity))
 
     # movement
     if pressed_keys[K_LEFT] or pressed_keys[K_a]:
@@ -102,15 +98,38 @@ while running:
 
     movement.normalize()
 
+    enemies_count = 0
+
     for entity in entities:
         if entity.type == 'Mob':
-            entity.update(time_passed_seconds, player, current_time)
-        elif entity.type == 'Boss':
-            entity.update()
-        elif entity.type == 'Player':
-            entity.update(canvas, time_passed_seconds, movement,
-                          entities, camera.offset.x, camera.offset.y)
+            enemies_count += 1
 
+    # if enemies_count == 0:
+    #     mobs = summon(Enemy, 500, 200, 1)
+    #     entities.extend(mobs)
+
+    for entity in entities:
+        if entity.type == 'Player':
+            entity.update(canvas, time_passed_seconds, movement,
+                          entities)
+        elif entity.type == 'Boss':
+            entity.update(canvas, time_passed_seconds, movement,
+                          entities)
+        elif entity.type == 'Mob':
+            entity.update(time_passed_seconds, player, current_time)
+        if entity.health_points <= 0:
+            entities.pop(entities.index(entity))
+
+    if current_time % 100 == 0:
+        boss.shoot(player.rect.center, time_passed_seconds)
+
+    if is_close(boss.hitbox, player.hitbox, 200) and current_time - whirlwind_activation_time > boss.cooldowns['whirlwind']:
+        whirlwind_activation_time = pygame.time.get_ticks()
+        boss.ready = False
+
+    if pygame.event.get(attack_with_delay) and not boss.ready:
+        boss.whirlwind(player)
+        boss.ready = True
     camera.scroll()
     canvas.blit(background, (int(0 - camera.offset.x +
                                  camera.CONST[0]), int(0 - camera.offset.y + camera.CONST[1])))

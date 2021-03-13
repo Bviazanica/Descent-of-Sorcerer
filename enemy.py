@@ -21,9 +21,7 @@ class Enemy():
 
         self.type = 'Mob'
         # hitbox
-        self.hitbox = pygame.Rect(
-            (self.rect.x, self.rect.y, 70, 100))
-
+        self.hitbox = pygame.Rect(self.rect.x + 10, self.rect.y + 35, 70, 100)
         # hp
         self.max_hp = 100
         self.health_points = 100

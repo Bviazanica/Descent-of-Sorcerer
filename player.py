@@ -1,10 +1,10 @@
 import os
 import sys
 import pygame
-from pygame.locals import *
 from entity import *
-from data.gameobjects.vector2 import Vector2
+from pygame.locals import *
 from projectile import Projectile
+from data.gameobjects.vector2 import Vector2
 
 
 class Player():
@@ -20,14 +20,10 @@ class Player():
 
         self.type = 'Player'
         # hitbox
-        self.hitbox = pygame.Rect(
-            self.rect.x, self.rect.y, self.player_img.get_width(), self.player_img.get_height())
+        self.hitbox = pygame.Rect(0, 0, 0, 0)
         # direction
         self.left = False
         self.right = True
-
-        # position
-        self.position = (300, 400)
 
         # cooldowns
         self.cooldowns = {'melee': 2000, 'range': 2000}
@@ -43,7 +39,7 @@ class Player():
         self.projectiles = []
 
         # healthpoints
-        self.health_points = 100
+        self.health_points = 100000
 
         # camera borders
         self.top_border, self.bottom_border = -268, 746
@@ -51,23 +47,36 @@ class Player():
         self.player_border_min_y, self.player_border_max_y = 120, 640
 
     # update position
-    def update(self, display, time, movement, obstacles, offset_x, offset_y):
+    def update(self, display, time, movement, obstacles):
         if(self.projectiles):
             for projectile in self.projectiles:
-                destroy = projectile.update(time, obstacles)
-                if destroy or projectile.rect.x > 1500 or projectile.rect.x < -380:
+                collision_list = check_collision(
+                    projectile.rect, obstacles, 'Player')
+                if len(collision_list):
+                    for col in collision_list:
+                        col.hit(projectile.damage)
                     self.projectiles.pop(self.projectiles.index(projectile))
+
+                elif projectile.rect.x > 1500 or projectile.rect.x < -380:
+                    self.projectiles.pop(self.projectiles.index(projectile))
+
+                else:
+                    projectile.update(time)
+
         self.rect, collisions = self.move(
             self.rect, movement, obstacles, time)
-        self.position = self.rect.x, self.rect.y
+
+        self.hitbox = pygame.Rect(
+            (self.rect.x, self.rect.y, self.player_img.get_width(), self.player_img.get_height()))
 
     def move(self, rect, movement, obstacles, time):
         collision_types = {'top': False, 'bottom': False,
                            'left': False, 'right': False}
 
         self.rect.x += movement[0] * time * self.speed
+
         # collisions on x axis
-        collision_list = check_collision(self.rect, obstacles)
+        collision_list = check_collision(self.rect, obstacles, 'Player')
         # we check if we collide with obstacle, first we check X axis coords, then y axis
         # this way we can correctly determine where the collision ocurred
         # for col in collision_list:
@@ -87,7 +96,7 @@ class Player():
 
         self.rect.y += movement[1] * time * self.speed
         # collisions on y axis
-        collision_list = check_collision(self.rect, obstacles)
+        collision_list = check_collision(self.rect, obstacles, 'Player')
         # for col in collision_list:
         #     if movement[1] > 0:
         #         # rect build in method allows us to set rect to side of another rect
@@ -123,7 +132,7 @@ class Player():
         else:
             direction = -1
         projectile = Projectile(
-            Vector2(self.rect.x + self.rect.w // 2, self.rect.y + self.rect.h // 2), direction)
+            Vector2(self.rect.x + self.rect.w // 2, self.rect.y + self.rect.h // 2), direction, Vector2(0, 0), 'player')
         self.projectiles.append(projectile)
 
     def melee_attack(self, display, obstacles, offset_x, offset_y):
@@ -133,8 +142,7 @@ class Player():
             direction = -1
         attack = pygame.Rect(self.rect.x + (self.rect.w*direction), self.rect.y,
                              36, 64)
-        collision_list = check_collision(attack, obstacles)
-        print(collision_list)
+        collision_list = check_collision(attack, obstacles, 'Player')
         for col in collision_list:
             col.hit(self.melee_damage)
 

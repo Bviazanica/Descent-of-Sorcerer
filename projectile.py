@@ -5,43 +5,42 @@ from data.gameobjects.vector2 import Vector2
 
 
 class Projectile(object):
-    def __init__(self, player_position, facing):
+    def __init__(self, position, facing, desired, projectile_type):
         self.images = []
         self.projectile_img = pygame.image.load(
             'data/images/projectiles/basic.png').convert_alpha()
         self.projectile_img = pygame.transform.scale(
-            self.projectile_img, (5, 5))
+            self.projectile_img, (20, 20))
 
         self.images.append(self.projectile_img)
         self.image = self.images[0]
         self.rect = self.image.get_rect()
 
-        self.player_position = player_position
+        self.position = position
 
-        self.rect.x = player_position[0]
-        self.rect.y = player_position[1]
+        self.rect.center = self.position
 
-        self.hitbox = pygame.Rect(
-            self.rect.x, self.rect.y, 5, 5)
+        self.hitbox = pygame.Rect(self.rect.x, self.rect.y, 20, 20)
 
         self.damage = 10
 
+        self.type = projectile_type
+
+        self.desired = desired
         self.speed = 350 * facing
 
-        self.destroy = False
+    def update(self, time):
+        if self.type == 'player':
+            self.rect.x += (self.speed * time)
+        elif self.type == 'boss':
+            self.position += self.desired * time * self.speed
+            self.rect.center = self.position
 
-    def update(self, time, collision_objects):
-        collision_list = check_collision(self.rect, collision_objects)
-        if collision_list:
-            for col in collision_list:
-                col.hit(self.damage)
-                self.destroy = True
-            return self.destroy
-        self.rect.x += (self.speed * time)
+        self.hitbox[0] = self.rect.x
+        self.hitbox[1] = self.rect.y
 
     def draw(self, display, offset_x, offset_y):
-        self.hitbox = pygame.Rect(
-            (self.rect.x - offset_x, self.rect.y-offset_y, 5, 5))
+        pygame.draw.rect(display, (255, 0, 0), [
+                         self.hitbox[0] - offset_x, self.hitbox[1] - offset_y, 20, 20], 2)
         display.blit(self.image, (self.rect.x -
                                   offset_x, self.rect.y-offset_y))
-        pygame.draw.rect(display, (255, 0, 0), self.hitbox, 2)
