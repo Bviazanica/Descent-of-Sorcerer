@@ -1,7 +1,7 @@
 import os
 import sys
 import pygame
-from entity import *
+from utility import *
 from pygame.locals import *
 from projectile import Projectile
 from data.gameobjects.vector2 import Vector2
@@ -30,7 +30,7 @@ class Player():
 
         # attack damage
         self.shoot_damage = 10
-        self.melee_damage = 50
+        self.melee_damage = 200
 
         # speed
         self.speed = 250
@@ -39,7 +39,8 @@ class Player():
         self.projectiles = []
 
         # healthpoints
-        self.health_points = 100000
+        self.health_points = 100
+        self.max_health = 100
 
         # camera borders
         self.top_border, self.bottom_border = -268, 746
@@ -47,11 +48,13 @@ class Player():
         self.player_border_min_y, self.player_border_max_y = 120, 640
 
     # update position
-    def update(self, display, time, movement, obstacles):
-        if(self.projectiles):
+    def update(self, display, time, movement, entities):
+        new_entities = new_list_without_self(self, entities)
+        print(self.health_points)
+        if self.projectiles:
             for projectile in self.projectiles:
                 collision_list = check_collision(
-                    projectile.rect, obstacles, 'Player')
+                    projectile.rect, new_entities)
                 if len(collision_list):
                     for col in collision_list:
                         col.hit(projectile.damage)
@@ -64,19 +67,19 @@ class Player():
                     projectile.update(time)
 
         self.rect, collisions = self.move(
-            self.rect, movement, obstacles, time)
+            self.rect, movement, new_entities, time)
 
         self.hitbox = pygame.Rect(
             (self.rect.x, self.rect.y, self.player_img.get_width(), self.player_img.get_height()))
 
-    def move(self, rect, movement, obstacles, time):
+    def move(self, rect, movement, new_entities, time):
         collision_types = {'top': False, 'bottom': False,
                            'left': False, 'right': False}
 
         self.rect.x += movement[0] * time * self.speed
 
         # collisions on x axis
-        collision_list = check_collision(self.rect, obstacles, 'Player')
+        collision_list = check_collision(self.rect, new_entities)
         # we check if we collide with obstacle, first we check X axis coords, then y axis
         # this way we can correctly determine where the collision ocurred
         # for col in collision_list:
@@ -96,7 +99,7 @@ class Player():
 
         self.rect.y += movement[1] * time * self.speed
         # collisions on y axis
-        collision_list = check_collision(self.rect, obstacles, 'Player')
+        collision_list = check_collision(self.rect, new_entities)
         # for col in collision_list:
         #     if movement[1] > 0:
         #         # rect build in method allows us to set rect to side of another rect
@@ -126,7 +129,7 @@ class Player():
             (self.rect.x - offset_x, self.rect.y - offset_y, self.player_img.get_width(), self.player_img.get_height()))
         pygame.draw.rect(display, (255, 0, 0), self.hitbox, 2)
 
-    def fire(self, display, obstacles, offset_x, offset_y):
+    def fire(self, display, new_entities, offset_x, offset_y):
         if self.right:
             direction = 1
         else:
@@ -135,14 +138,14 @@ class Player():
             Vector2(self.rect.x + self.rect.w // 2, self.rect.y + self.rect.h // 2), direction, Vector2(0, 0), 'player')
         self.projectiles.append(projectile)
 
-    def melee_attack(self, display, obstacles, offset_x, offset_y):
+    def melee_attack(self, display, new_entities, offset_x, offset_y):
         if self.right:
             direction = 1
         else:
             direction = -1
         attack = pygame.Rect(self.rect.x + (self.rect.w*direction), self.rect.y,
                              36, 64)
-        collision_list = check_collision(attack, obstacles, 'Player')
+        collision_list = check_collision(attack, new_entities)
         for col in collision_list:
             col.hit(self.melee_damage)
 

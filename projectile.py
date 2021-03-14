@@ -1,6 +1,6 @@
 import pygame
+from utility import *
 from pygame.locals import *
-from entity import *
 from data.gameobjects.vector2 import Vector2
 
 
@@ -27,7 +27,7 @@ class Projectile(object):
         self.type = projectile_type
 
         self.desired = desired
-        self.speed = 350 * facing
+        self.speed = 100 * facing
 
     def update(self, time):
         if self.type == 'player':

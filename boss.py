@@ -1,6 +1,6 @@
 import random
 import pygame
-from entity import *
+from utility import *
 from pygame.locals import *
 from projectile import Projectile
 Vector2 = pygame.math.Vector2
@@ -43,11 +43,12 @@ class Boss():
 
         self.ready = True
 
-    def update(self, display, time, movement, obstacles):
+    def update(self, display, time, movement, entities):
+        new_entities = new_list_without_self(self, entities)
         if(self.projectiles):
             for projectile in self.projectiles:
                 collision_list = check_collision(
-                    projectile.rect, obstacles, 'Boss')
+                    projectile.rect, new_entities)
                 if len(collision_list):
                     for col in collision_list:
                         col.hit(projectile.damage)

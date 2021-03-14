@@ -2,16 +2,17 @@
 import os
 import sys
 import pygame
+import random
 from data import *
-from entity import *
+from utility import *
 from boss import Boss
 from enemy import Enemy
 from player import Player
-from random import randint
 from pygame.locals import *
 from data.camera.camera import *
 from data.globals.globals import *
 from data.gameobjects.vector2 import Vector2
+from data.objects.items.potion import Potion
 
 # window & canvas
 window = pygame.display.set_mode(SCREEN_SIZE)
@@ -32,11 +33,13 @@ bgHeight = background.get_height()
 
 # entities
 entities = []
+items = []
 
 player = Player()
 entities.append(player)
 boss = Boss()
 entities.append(boss)
+
 
 # mobs = summon(Enemy, 500, 200, 1)
 # entities.extend(mobs)
@@ -104,9 +107,9 @@ while running:
         if entity.type == 'Mob':
             enemies_count += 1
 
-    # if enemies_count == 0:
-    #     mobs = summon(Enemy, 500, 200, 1)
-    #     entities.extend(mobs)
+    if enemies_count == 0:
+        mobs = summon(Enemy, 500, 200, 5)
+        entities.extend(mobs)
 
     for entity in entities:
         if entity.type == 'Player':
@@ -119,6 +122,9 @@ while running:
             entity.update(time_passed_seconds, player, current_time)
         if entity.health_points <= 0:
             entities.pop(entities.index(entity))
+            if random.random() > 0.30:
+                items.append(Potion(50, 'healing_potion',
+                                    entity.hitbox.center, 32, 32))
 
     if current_time % 100 == 0:
         boss.shoot(player.rect.center, time_passed_seconds)
@@ -130,12 +136,21 @@ while running:
     if pygame.event.get(attack_with_delay) and not boss.ready:
         boss.whirlwind(player)
         boss.ready = True
+
+    items_collisions = check_collision(player.hitbox, items)
+    for item in items_collisions:
+        item.heal(player)
+        items.pop(items.index(item))
+
     camera.scroll()
     canvas.blit(background, (int(0 - camera.offset.x +
                                  camera.CONST[0]), int(0 - camera.offset.y + camera.CONST[1])))
 
     for entity in entities:
         entity.draw(canvas, camera.offset.x, camera.offset.y)
+
+    for item in items:
+        item.draw(canvas, camera.offset.x, camera.offset.y)
 
     window.blit(canvas, (0, 0))
     pygame.display.update()

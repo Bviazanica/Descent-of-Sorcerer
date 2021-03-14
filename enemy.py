@@ -1,6 +1,6 @@
 import math
 import pygame
-from entity import *
+from utility import *
 from random import randint
 from pygame.locals import *
 from data.globals.globals import *
