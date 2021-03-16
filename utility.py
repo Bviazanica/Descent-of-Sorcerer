@@ -24,9 +24,9 @@ def is_close(object1, object2, distance):
 
 
 def summon(object, x, y, number):
-    creatures = []
-    for creature in range(number):
-        creature = object(x, y)
-        creatures.append(creature)
+    mobs = []
+    for mob in range(number):
+        mob = object(x, y)
+        mobs.append(mob)
         y += 125
-    return creatures
+    return mobs

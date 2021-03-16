@@ -11,7 +11,7 @@ class Boss():
         # image
         self.images = []
         self.boss_img = pygame.image.load(
-            'data/images/entities/bosses/robot.png').convert_alpha()
+            'data/images/entities/bosses/idle/0_Golem_Idle_000.png').convert_alpha()
         bossImg = pygame.transform.scale(self.boss_img, (72, 128))
         self.images.append(self.boss_img)
         self.image = self.images[0]
@@ -63,7 +63,7 @@ class Boss():
         self.hitbox[0] = self.rect.x + 10
         self.hitbox[1] = self.rect.y + 35
 
-    def draw(self, display, offset_x, offset_y):
+    def draw(self, display, offset_x, offset_y, player):
         display.blit(self.image, (self.rect.x -
                                   offset_x, self.rect.y - offset_y))
 

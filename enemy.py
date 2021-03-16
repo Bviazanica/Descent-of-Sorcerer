@@ -12,7 +12,7 @@ class Enemy():
         # image
         self.images = []
         self.enemy_img = pygame.image.load(
-            'data/images/entities/enemy/woman.png').convert_alpha()
+            'data/images/entities/enemy/Idle/0_Reaper_Man_Idle_000.png').convert_alpha()
         self.images.append(self.enemy_img)
         self.image = self.images[0]
         self.rect = self.image.get_rect(width=(70), height=(100))
@@ -51,19 +51,26 @@ class Enemy():
         self.left_border, self.right_border = -380, 1500
         self.player_border_min_y, self.player_border_max_y = 120, 640
 
-    def update(self, time, player, current_time):
+        self.vector1 = Vector2(0, 0)
+        self.vector2 = Vector2(0, 0)
+        self.vector3 = Vector2(0, 0)
+        self.vector4 = Vector2(0, 0)
+
+    def update(self, time, player, current_time, mobs):
         if self.state == 'SEEKING':
-            self.acceleration += self.state_seeking(time, player, current_time)
+            self.acceleration += self.state_seeking(
+                time, player, current_time, mobs)
         elif self.state == 'HUNTING':
-            self.acceleration += self.state_hunting(time, player, current_time)
+            self.acceleration += self.state_hunting(
+                time, player, current_time, mobs)
         elif self.state == 'FLEE':
-            self.acceleration += self.state_flee(time, player, current_time)
+            self.acceleration += self.state_flee(time,
+                                                 player, current_time, mobs)
         elif self.state == 'SACRIFICE':
             self.acceleration += self.state_sacrifice(
                 time, player, current_time)
 
-        if self.acceleration.length() > self.speed:
-            self.acceleration.scale_to_length(self.speed)
+        # print(self.acceleration.length())
 
         if(self.rect.x < self.left_border):
             self.rect.x = self.left_border
@@ -80,7 +87,7 @@ class Enemy():
         self.hitbox[0] = self.rect.x + 10
         self.hitbox[1] = self.rect.y + 35
 
-    def draw(self, display, offset_x, offset_y):
+    def draw(self, display, offset_x, offset_y, player):
         display.blit(self.image, (self.rect.x -
                                   offset_x, self.rect.y - offset_y))
         pygame.draw.rect(display, (255, 0, 0), [
@@ -93,10 +100,22 @@ class Enemy():
                          (self.hitbox[0] -
                           offset_x, self.hitbox[1] - 15 - offset_y, self.hp_bar_width - ((self.hp_bar_width/100)*(self.max_hp - self.health_points)), 10))
 
+        pygame.draw.line(display, RED, self.hitbox.center - Vector2(offset_x,
+                                                                    offset_y), (self.hitbox.center + self.vector3 * 25) - Vector2(offset_x,
+                                                                                                                                  offset_y), 5)
+
+        pygame.draw.line(display, GREEN, self.hitbox.center - Vector2(offset_x,
+                                                                      offset_y), (self.hitbox.center + self.vector1 * 25) - Vector2(offset_x,
+                                                                                                                                    offset_y), 5)
+
+        pygame.draw.line(display, WHITE, self.hitbox.center - Vector2(offset_x,
+                                                                      offset_y), (self.hitbox.center + self.vector2 * 25) - Vector2(offset_x,
+                                                                                                                                    offset_y), 5)
+
     def hit(self, damage):
         self.health_points -= damage
 
-    def state_seeking(self, time, player, current_time):
+    def state_seeking(self, time, player, current_time, mobs):
         if self.init_state:
             self.heading = pygame.Rect(
                 randint(-268, 746), randint(-380, 1500), 70, 100)
@@ -115,23 +134,23 @@ class Enemy():
             self.set_destination()
             self.timer = pygame.time.get_ticks()
 
-        return self.seek_with_approach(self.heading.center, time)
+        return self.seek_with_approach(self.heading.center, time, mobs)
 
-    def state_hunting(self, time, player, current_time):
+    def state_hunting(self, time, player, current_time, mobs):
         if self.init_state:
             self.speed = 150
             self.timer = pygame.time.get_ticks()
             self.init_state = False
 
-        elif self.health_points <= 20:
-            self.state = self.states['FLEE']
-            self.init_state = True
+        # elif self.health_points <= 20:
+        #     self.state = self.states['FLEE']
+        #     self.init_state = True
 
         if is_close(self.hitbox, player.rect, 25) and current_time - self.timer > 2000:
             player.hit(self.damage)
             self.timer = pygame.time.get_ticks()
 
-        return self.seek_with_approach(player.rect.center, time)
+        return self.seek_with_approach(player.rect.center, time, mobs)
 
     def state_flee(self, time, player, current_time):
         if self.init_state:
@@ -158,10 +177,11 @@ class Enemy():
         self.heading = pygame.Rect(
             randint(-268 + 70, 746 - 70), randint(120 + 100, 640 - 100), 70, 100)
 
-    def seek_with_approach(self, target, time):
+    def seek_with_approach(self, target, time, mobs):
         # vector from position -> target position
         self.desired = (
             target - Vector2(self.hitbox.centerx, self.hitbox.centery))
+        self.vector1 = self.desired
         dist = self.desired.length()
         if not dist == 0:
             self.desired.normalize_ip()
@@ -170,11 +190,13 @@ class Enemy():
             else:
                 self.desired *= self.speed * time
 
-            # vector from accelerationelaration vector to desired vector position
+            # vector from acceleration vector to desired vector position
             steer = (self.desired - self.acceleration)
+
             # scale of vector to have correct length
             if steer.length() > self.max_force:
                 steer.scale_to_length(self.max_force)
+            self.avoid_mobs(mobs, time)
             return steer
         else:
             return Vector2(0, 0)
@@ -189,3 +211,15 @@ class Enemy():
             steer.scale_to_length(self.max_force)
 
         return steer
+
+    def avoid_mobs(self, mobs, time):
+        for mob in mobs:
+            if mob != self:
+                distance = Vector2(self.hitbox.centerx - mob.hitbox.centerx,
+                                   self.hitbox.centery - mob.hitbox.centery)
+                self.vector3 = distance
+                if 0 < distance.length() < 50:
+                    self.acceleration += distance.normalize()
+                    self.acceleration.scale_to_length(
+                        self.desired.length())
+                    self.vector2 = self.acceleration

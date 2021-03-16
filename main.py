@@ -27,22 +27,19 @@ pygame.display.set_caption("Celestial")
 
 # background
 background = pygame.image.load(
-    'data/images/backgrounds/bg_1.png').convert()
+    'data/images/backgrounds/background.png').convert()
 bgWidth = background.get_width()
 bgHeight = background.get_height()
 
 # entities
 entities = []
 items = []
+mobs = []
 
 player = Player()
 entities.append(player)
 boss = Boss()
 entities.append(boss)
-
-
-# mobs = summon(Enemy, 500, 200, 1)
-# entities.extend(mobs)
 
 # camera & methods
 camera = Camera(player)
@@ -74,20 +71,31 @@ while running:
     time_passed_seconds = time_passed / 1000.0
     pressed_keys = pygame.key.get_pressed()
     movement = Vector2(0, 0)
-
+    player.moving_right = False
+    player.moving_left = False
     # movement
     if pressed_keys[K_LEFT] or pressed_keys[K_a]:
         movement.x = -1
         player.left = True
         player.right = False
+        player.moving_left = True
     elif pressed_keys[K_RIGHT] or pressed_keys[K_d]:
         movement.x = +1
         player.right = True
         player.left = False
+        player.moving_right = True
     if pressed_keys[K_UP] or pressed_keys[K_w]:
         movement.y = -1
+        if player.right:
+            player.moving_right = True
+        else:
+            player.moving_left = True
     elif pressed_keys[K_DOWN] or pressed_keys[K_s]:
         movement.y = +1
+        if player.right:
+            player.moving_right = True
+        else:
+            player.moving_left = True
 
     if pressed_keys[K_SPACE] and current_time - range_attack_time > player.cooldowns['range']:
         range_attack_time = pygame.time.get_ticks()
@@ -108,18 +116,18 @@ while running:
             enemies_count += 1
 
     if enemies_count == 0:
-        mobs = summon(Enemy, 500, 200, 5)
+        mobs = summon(Enemy, 500, 200, 2)
         entities.extend(mobs)
 
     for entity in entities:
-        if entity.type == 'Player':
+        if entity.type == 'player':
             entity.update(canvas, time_passed_seconds, movement,
                           entities)
         elif entity.type == 'Boss':
             entity.update(canvas, time_passed_seconds, movement,
                           entities)
         elif entity.type == 'Mob':
-            entity.update(time_passed_seconds, player, current_time)
+            entity.update(time_passed_seconds, player, current_time, mobs)
         if entity.health_points <= 0:
             entities.pop(entities.index(entity))
             if random.random() > 0.30:
@@ -147,7 +155,7 @@ while running:
                                  camera.CONST[0]), int(0 - camera.offset.y + camera.CONST[1])))
 
     for entity in entities:
-        entity.draw(canvas, camera.offset.x, camera.offset.y)
+        entity.draw(canvas, camera.offset.x, camera.offset.y, player)
 
     for item in items:
         item.draw(canvas, camera.offset.x, camera.offset.y)

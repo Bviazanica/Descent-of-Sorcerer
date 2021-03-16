@@ -9,21 +9,39 @@ from data.gameobjects.vector2 import Vector2
 
 class Player():
     def __init__(self):
-        self.images = []
-        self.player_img = pygame.image.load(
-            'data/images/entities/hero/hero.png').convert_alpha()
-        self.player_img = pygame.transform.scale(self.player_img, (36, 64))
-        self.images.append(self.player_img)
-        self.image = self.images[0]
+        self.type = 'player'
 
+        self.flip = False
+        self.animation_list = []
+        self.frame_index = 0
+        self.action = 0
+        self.update_time = pygame.time.get_ticks()
+
+        animation_types = ['Idle', 'Running', ]
+        # load all images for the players
+        for animation in animation_types:
+            # reset temporary list of images
+            temp_list = []
+            # count number of files in the folder
+            num_of_frames = len(os.listdir(
+                f'data/images/entities/{self.type}/{animation}'))
+            for i in range(num_of_frames):
+                img = pygame.image.load(
+                    f'data/images/entities/{self.type}/{animation}/{i}.png')
+                img = pygame.transform.scale(img, (64, 128))
+                temp_list.append(img)
+            self.animation_list.append(temp_list)
+
+        self.image = self.animation_list[self.action][self.frame_index]
         self.rect = self.image.get_rect()
-
-        self.type = 'Player'
         # hitbox
         self.hitbox = pygame.Rect(0, 0, 0, 0)
         # direction
         self.left = False
         self.right = True
+
+        self.moving_left = False
+        self.moving_right = True
 
         # cooldowns
         self.cooldowns = {'melee': 2000, 'range': 2000}
@@ -39,8 +57,8 @@ class Player():
         self.projectiles = []
 
         # healthpoints
-        self.health_points = 100
-        self.max_health = 100
+        self.health_points = 2000
+        self.max_health = 2000
 
         # camera borders
         self.top_border, self.bottom_border = -268, 746
@@ -49,8 +67,13 @@ class Player():
 
     # update position
     def update(self, display, time, movement, entities):
+        if self.moving_left or self.moving_right:
+            self.set_action(1)
+        else:
+            self.set_action(0)
+
+        self.update_animation()
         new_entities = new_list_without_self(self, entities)
-        print(self.health_points)
         if self.projectiles:
             for projectile in self.projectiles:
                 collision_list = check_collision(
@@ -70,14 +93,13 @@ class Player():
             self.rect, movement, new_entities, time)
 
         self.hitbox = pygame.Rect(
-            (self.rect.x, self.rect.y, self.player_img.get_width(), self.player_img.get_height()))
+            (self.rect.x, self.rect.y, self.image.get_width(), self.image.get_height()))
 
     def move(self, rect, movement, new_entities, time):
         collision_types = {'top': False, 'bottom': False,
                            'left': False, 'right': False}
 
         self.rect.x += movement[0] * time * self.speed
-
         # collisions on x axis
         collision_list = check_collision(self.rect, new_entities)
         # we check if we collide with obstacle, first we check X axis coords, then y axis
@@ -118,7 +140,7 @@ class Player():
         return self.rect, collision_types
 
     # draw player to canvas
-    def draw(self, display, offset_x, offset_y):
+    def draw(self, display, offset_x, offset_y, player):
         if(self.projectiles):
             for projectile in self.projectiles:
                 projectile.draw(display, offset_x, offset_y)
@@ -126,7 +148,7 @@ class Player():
         display.blit(self.image, (self.rect.x -
                                   offset_x, self.rect.y - offset_y))
         self.hitbox = pygame.Rect(
-            (self.rect.x - offset_x, self.rect.y - offset_y, self.player_img.get_width(), self.player_img.get_height()))
+            (self.rect.x - offset_x, self.rect.y - offset_y, self.image.get_width(), self.image.get_height()))
         pygame.draw.rect(display, (255, 0, 0), self.hitbox, 2)
 
     def fire(self, display, new_entities, offset_x, offset_y):
@@ -151,3 +173,23 @@ class Player():
 
     def hit(self, damage):
         self.health_points -= damage
+
+    def update_animation(self):
+        ANIMATION_COOLDOWN = 100
+        # update image depending on current frame
+        self.image = self.animation_list[self.action][self.frame_index]
+        # check if time passed since last update
+        if pygame.time.get_ticks() - self.update_time > ANIMATION_COOLDOWN:
+            self.update_time = pygame.time.get_ticks()
+            self.frame_index += 1
+        # out of images - resets
+        if self.frame_index >= len(self.animation_list[self.action]):
+            self.frame_index = 0
+
+    def set_action(self, new_action):
+        # check if the new action != previous
+        if new_action != self.action:
+            self.action = new_action
+            # update animation from start
+            self.frame_index = 0
+            self.update_time = pygame.time.get_ticks()
