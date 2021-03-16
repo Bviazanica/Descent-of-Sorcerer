@@ -4,6 +4,7 @@ import pygame
 from utility import *
 from pygame.locals import *
 from projectile import Projectile
+from data.globals.globals import *
 from data.gameobjects.vector2 import Vector2
 
 
@@ -17,25 +18,13 @@ class Player():
         self.action = 0
         self.update_time = pygame.time.get_ticks()
 
-        animation_types = ['Idle', 'Running']
-        # load all images for the players
-        for animation in animation_types:
-            # reset temporary list of images
-            temp_list = []
-            # count number of files in the folder
-            num_of_frames = len(os.listdir(
-                f'data/images/entities/{self.type}/{animation}'))
-            for i in range(num_of_frames):
-                img = pygame.image.load(
-                    f'data/images/entities/{self.type}/{animation}/{i}.png')
-                img = pygame.transform.scale(img, (64, 128))
-                temp_list.append(img)
-            self.animation_list.append(temp_list)
+        self.animation_list = load_animations(self.type, 64, 128)
 
         self.image = self.animation_list[self.action][self.frame_index]
         self.rect = self.image.get_rect()
         # hitbox
-        self.hitbox = pygame.Rect(0, 0, 0, 0)
+        self.hitbox = pygame.Rect(
+            (self.rect.x, self.rect.y, self.image.get_width(), self.image.get_height()))
 
         self.moving_left = False
         self.moving_right = True
@@ -64,15 +53,16 @@ class Player():
         self.player_border_min_y, self.player_border_max_y = 120, 640
 
     # update position
+
     def update(self, display, time, movement, entities):
         if self.facing_positive:
             self.flip = False
         else:
             self.flip = True
         if self.moving_left or self.moving_right:
-            self.set_action(1)
+            self.set_action(Animation_type.Running)
         else:
-            self.set_action(0)
+            self.set_action(Animation_type.Idle_Blinking)
 
         self.update_animation()
         new_entities = new_list_without_self(self, entities)
@@ -189,7 +179,7 @@ class Player():
 
     def set_action(self, new_action):
         # check if the new action != previous
-        if new_action != self.action:
+        if int(new_action) != self.action:
             self.action = new_action
             # update animation from start
             self.frame_index = 0

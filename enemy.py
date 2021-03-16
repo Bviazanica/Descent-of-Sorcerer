@@ -12,7 +12,7 @@ class Enemy():
         # image
         self.images = []
         self.enemy_img = pygame.image.load(
-            'data/images/entities/enemy/Idle/0_Reaper_Man_Idle_000.png').convert_alpha()
+            'data/images/entities/enemy/Idle/0.png').convert_alpha()
         enemy_img = pygame.transform.scale(self.enemy_img, (72, 128))
         self.images.append(enemy_img)
         self.image = self.images[0]

@@ -11,7 +11,7 @@ class Boss():
         # image
         self.images = []
         self.boss_img = pygame.image.load(
-            'data/images/entities/bosses/idle/0_Golem_Idle_000.png').convert_alpha()
+            'data/images/entities/bosses/idle/0.png').convert_alpha()
         bossImg = pygame.transform.scale(self.boss_img, (72, 128))
         self.images.append(bossImg)
         self.image = self.images[0]
