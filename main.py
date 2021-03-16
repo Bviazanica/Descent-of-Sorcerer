@@ -23,7 +23,7 @@ clock = pygame.time.Clock()
 pygame.init()
 
 # Title
-pygame.display.set_caption("Celestial")
+pygame.display.set_caption("Game")
 
 # background
 background = pygame.image.load(
@@ -76,23 +76,21 @@ while running:
     # movement
     if pressed_keys[K_LEFT] or pressed_keys[K_a]:
         movement.x = -1
-        player.left = True
-        player.right = False
         player.moving_left = True
+        player.facing_positive = False
     elif pressed_keys[K_RIGHT] or pressed_keys[K_d]:
         movement.x = +1
-        player.right = True
-        player.left = False
         player.moving_right = True
+        player.facing_positive = True
     if pressed_keys[K_UP] or pressed_keys[K_w]:
         movement.y = -1
-        if player.right:
+        if player.facing_positive:
             player.moving_right = True
         else:
             player.moving_left = True
     elif pressed_keys[K_DOWN] or pressed_keys[K_s]:
         movement.y = +1
-        if player.right:
+        if player.facing_positive:
             player.moving_right = True
         else:
             player.moving_left = True

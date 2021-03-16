@@ -5,7 +5,7 @@ from data.gameobjects.vector2 import Vector2
 
 
 class Projectile(object):
-    def __init__(self, position, facing, desired, projectile_type):
+    def __init__(self, position, direction, desired, projectile_type):
         self.images = []
         self.projectile_img = pygame.image.load(
             'data/images/projectiles/basic.png').convert_alpha()
@@ -27,7 +27,7 @@ class Projectile(object):
         self.type = projectile_type
 
         self.desired = desired
-        self.speed = 100 * facing
+        self.speed = 100 * direction
 
     def update(self, time):
         if self.type == 'player':

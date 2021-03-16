@@ -17,7 +17,7 @@ class Player():
         self.action = 0
         self.update_time = pygame.time.get_ticks()
 
-        animation_types = ['Idle', 'Running', ]
+        animation_types = ['Idle', 'Running']
         # load all images for the players
         for animation in animation_types:
             # reset temporary list of images
@@ -36,13 +36,11 @@ class Player():
         self.rect = self.image.get_rect()
         # hitbox
         self.hitbox = pygame.Rect(0, 0, 0, 0)
-        # direction
-        self.left = False
-        self.right = True
 
         self.moving_left = False
         self.moving_right = True
 
+        self.facing_positive = True
         # cooldowns
         self.cooldowns = {'melee': 2000, 'range': 2000}
 
@@ -67,6 +65,10 @@ class Player():
 
     # update position
     def update(self, display, time, movement, entities):
+        if self.facing_positive:
+            self.flip = False
+        else:
+            self.flip = True
         if self.moving_left or self.moving_right:
             self.set_action(1)
         else:
@@ -144,15 +146,14 @@ class Player():
         if(self.projectiles):
             for projectile in self.projectiles:
                 projectile.draw(display, offset_x, offset_y)
-
-        display.blit(self.image, (self.rect.x -
-                                  offset_x, self.rect.y - offset_y))
+        display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
+                                                                           offset_x, self.rect.y - offset_y))
         self.hitbox = pygame.Rect(
             (self.rect.x - offset_x, self.rect.y - offset_y, self.image.get_width(), self.image.get_height()))
         pygame.draw.rect(display, (255, 0, 0), self.hitbox, 2)
 
     def fire(self, display, new_entities, offset_x, offset_y):
-        if self.right:
+        if self.facing_positive:
             direction = 1
         else:
             direction = -1
@@ -161,7 +162,7 @@ class Player():
         self.projectiles.append(projectile)
 
     def melee_attack(self, display, new_entities, offset_x, offset_y):
-        if self.right:
+        if self.facing_positive:
             direction = 1
         else:
             direction = -1
@@ -175,7 +176,7 @@ class Player():
         self.health_points -= damage
 
     def update_animation(self):
-        ANIMATION_COOLDOWN = 100
+        ANIMATION_COOLDOWN = 50
         # update image depending on current frame
         self.image = self.animation_list[self.action][self.frame_index]
         # check if time passed since last update

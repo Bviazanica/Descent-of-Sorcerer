@@ -13,7 +13,8 @@ class Enemy():
         self.images = []
         self.enemy_img = pygame.image.load(
             'data/images/entities/enemy/Idle/0_Reaper_Man_Idle_000.png').convert_alpha()
-        self.images.append(self.enemy_img)
+        enemy_img = pygame.transform.scale(self.enemy_img, (72, 128))
+        self.images.append(enemy_img)
         self.image = self.images[0]
         self.rect = self.image.get_rect(width=(70), height=(100))
 
