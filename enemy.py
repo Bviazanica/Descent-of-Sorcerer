@@ -9,6 +9,7 @@ Vector2 = pygame.math.Vector2
 
 class Enemy():
     def __init__(self, x, y):
+        self.type = 'mob'
         # image
         self.images = []
         self.enemy_img = pygame.image.load(
@@ -20,7 +21,6 @@ class Enemy():
 
         self.rect.center = (x, y)
 
-        self.type = 'Mob'
         # hitbox
         self.hitbox = pygame.Rect(self.rect.x + 10, self.rect.y + 35, 70, 100)
         # hp

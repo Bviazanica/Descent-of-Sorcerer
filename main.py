@@ -114,7 +114,7 @@ while running:
     enemies_count = 0
 
     for entity in entities:
-        if entity.type == 'Mob':
+        if entity.type == 'mob':
             enemies_count += 1
 
     if enemies_count == 0:
@@ -128,7 +128,7 @@ while running:
         elif entity.type == 'boss':
             entity.update(canvas, time_passed_seconds, movement,
                           entities)
-        elif entity.type == 'Mob':
+        elif entity.type == 'mob':
             entity.update(time_passed_seconds, player, current_time, mobs)
         if entity.health_points <= 0 and entity.type != 'player':
             entities.pop(entities.index(entity))
