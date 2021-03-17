@@ -11,13 +11,17 @@ class Enemy():
     def __init__(self, x, y):
         self.type = 'mob'
         # image
-        self.images = []
-        self.enemy_img = pygame.image.load(
-            'data/images/entities/enemy/Idle/0.png').convert_alpha()
-        enemy_img = pygame.transform.scale(self.enemy_img, (72, 128))
-        self.images.append(enemy_img)
-        self.image = self.images[0]
-        self.rect = self.image.get_rect(width=(70), height=(100))
+        self.flip = False
+        self.animation_list = []
+        self.frame_index = 0
+        self.action = 0
+        self.update_time = pygame.time.get_ticks()
+
+        self.animation_list = load_animations(self.type, 80, 80)
+
+        self.image = self.animation_list[self.action][self.frame_index]
+        # rect
+        self.rect = self.image.get_rect()
 
         self.rect.center = (x, y)
 

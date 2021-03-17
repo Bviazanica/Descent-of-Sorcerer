@@ -20,7 +20,7 @@ class Player():
         self.action = 0
         self.update_time = pygame.time.get_ticks()
 
-        self.animation_list = load_animations(self.type, 64, 128)
+        self.animation_list = load_animations(self.type, 100, 100)
 
         self.image = self.animation_list[self.action][self.frame_index]
         self.rect = self.image.get_rect()

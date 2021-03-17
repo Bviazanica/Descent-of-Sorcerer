@@ -16,7 +16,7 @@ class Boss():
         self.action = 0
         self.update_time = pygame.time.get_ticks()
 
-        self.animation_list = load_animations(self.type, 100, 200)
+        self.animation_list = load_animations(self.type, 150, 200)
 
         self.image = self.animation_list[self.action][self.frame_index]
         # rect
