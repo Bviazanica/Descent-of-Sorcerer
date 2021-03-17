@@ -8,24 +8,26 @@ Vector2 = pygame.math.Vector2
 
 class Boss():
     def __init__(self):
-        # image
-        self.images = []
-        self.boss_img = pygame.image.load(
-            'data/images/entities/bosses/idle/0.png').convert_alpha()
-        bossImg = pygame.transform.scale(self.boss_img, (72, 128))
-        self.images.append(bossImg)
-        self.image = self.images[0]
+        self.type = 'boss'
 
+        self.flip = False
+        self.animation_list = []
+        self.frame_index = 0
+        self.action = 0
+        self.update_time = pygame.time.get_ticks()
+
+        self.animation_list = load_animations(self.type, 100, 200)
+
+        self.image = self.animation_list[self.action][self.frame_index]
         # rect
-        self.rect = self.image.get_rect(width=(75), height=(100))
+        self.rect = self.image.get_rect()
 
         self.rect.center = 200, 400
 
-        self.type = 'Boss'
-
-        # hitbox
         self.hitbox = pygame.Rect(
             self.rect.x, self.rect.y, 75, 100)
+
+        # hitbox
 
         self.cooldowns = {'summon': 15000, 'whirlwind': 10000, 'orbs': 5000}
 

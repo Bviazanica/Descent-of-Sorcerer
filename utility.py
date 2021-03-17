@@ -42,8 +42,7 @@ def load_animations(entity_type, w, h):
         # reset temporary list of images
         temp_list = []
         # count number of files in the folder
-        if len(os.listdir(
-                f'data/images/entities/{entity_type}/{animation}')):
+        if os.path.isdir(f'data/images/entities/{entity_type}/{animation}'):
             num_of_frames = len(os.listdir(
                 f'data/images/entities/{entity_type}/{animation}'))
 
@@ -53,5 +52,7 @@ def load_animations(entity_type, w, h):
                 img = pygame.transform.scale(img, (w, h))
                 temp_list.append(img)
             list_of_loaded_animations.append(temp_list)
+        else:
+            print(f'skipped {animation}')
 
     return list_of_loaded_animations

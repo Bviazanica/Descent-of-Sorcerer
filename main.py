@@ -71,41 +71,45 @@ while running:
     time_passed_seconds = time_passed / 1000.0
     pressed_keys = pygame.key.get_pressed()
     movement = Vector2(0, 0)
-    player.moving_right = False
-    player.moving_left = False
-    # movement
-    if pressed_keys[K_LEFT] or pressed_keys[K_a]:
-        movement.x = -1
-        player.moving_left = True
-        player.facing_positive = False
-    elif pressed_keys[K_RIGHT] or pressed_keys[K_d]:
-        movement.x = +1
-        player.moving_right = True
-        player.facing_positive = True
-    if pressed_keys[K_UP] or pressed_keys[K_w]:
-        movement.y = -1
-        if player.facing_positive:
-            player.moving_right = True
-        else:
-            player.moving_left = True
-    elif pressed_keys[K_DOWN] or pressed_keys[K_s]:
-        movement.y = +1
-        if player.facing_positive:
-            player.moving_right = True
-        else:
-            player.moving_left = True
 
-    if pressed_keys[K_SPACE] and current_time - range_attack_time > player.cooldowns['range']:
-        range_attack_time = pygame.time.get_ticks()
-        player.fire(canvas, entities,
-                    camera.offset.x, camera.offset.y)
+    if player.health_points <= 0:
+        player.is_alive = False
+        player.state = player.states['DYING']
+    else:
+        # movement
+        if pressed_keys[K_LEFT] or pressed_keys[K_a]:
+            movement.x = -1
+            player.facing_positive = False
+        elif pressed_keys[K_RIGHT] or pressed_keys[K_d]:
+            movement.x = +1
+            player.facing_positive = True
+        if pressed_keys[K_UP] or pressed_keys[K_w]:
+            movement.y = -1
+        elif pressed_keys[K_DOWN] or pressed_keys[K_s]:
+            movement.y = +1
 
-    if pressed_keys[K_f] and current_time - melee_attack_time > player.cooldowns['melee']:
-        melee_attack_time = pygame.time.get_ticks()
-        player.melee_attack(canvas, entities,
-                            camera.offset.x, camera.offset.y)
+        if (pressed_keys[K_d] or pressed_keys[K_a] or pressed_keys[K_s] or pressed_keys[K_w]
+                or pressed_keys[K_LEFT] or pressed_keys[K_RIGHT] or pressed_keys[K_UP] or pressed_keys[K_DOWN]) and player.init_state and player.state != player.states['HURTING']:
+            player.state = player.states['RUNNING']
 
-    movement.normalize()
+        if pressed_keys[K_SPACE] and current_time - range_attack_time > player.cooldowns['range']:
+            range_attack_time = pygame.time.get_ticks()
+            if player.state == 'RUNNING':
+                player.state = player.states['RUNNING-FIRING']
+            else:
+                player.state = player.states['FIRING']
+
+        if pressed_keys[K_f] and current_time - melee_attack_time > player.cooldowns['melee']:
+            melee_attack_time = pygame.time.get_ticks()
+            if player.state == 'RUNNING':
+                player.state = player.states['RUNNING-ATTACKING']
+            else:
+                player.state = player.states['ATTACKING']
+
+        if not pressed_keys.count(1) and player.state != player.states['HURTING'] and player.state != player.states['DYING']:
+            player.state = player.states['IDLING']
+
+        movement.normalize()
 
     enemies_count = 0
 
@@ -114,19 +118,19 @@ while running:
             enemies_count += 1
 
     if enemies_count == 0:
-        mobs = summon(Enemy, 500, 200, 2)
+        mobs = summon(Enemy, 500, 200, 1)
         entities.extend(mobs)
 
     for entity in entities:
         if entity.type == 'player':
             entity.update(canvas, time_passed_seconds, movement,
                           entities)
-        elif entity.type == 'Boss':
+        elif entity.type == 'boss':
             entity.update(canvas, time_passed_seconds, movement,
                           entities)
         elif entity.type == 'Mob':
             entity.update(time_passed_seconds, player, current_time, mobs)
-        if entity.health_points <= 0:
+        if entity.health_points <= 0 and entity.type != 'player':
             entities.pop(entities.index(entity))
             if random.random() > 0.30:
                 items.append(Potion(50, 'healing_potion',
