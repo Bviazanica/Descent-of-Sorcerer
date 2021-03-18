@@ -22,7 +22,7 @@ canvas = pygame.Surface((SCREEN_SIZE[0], SCREEN_SIZE[1]))
 clock = pygame.time.Clock()
 pygame.init()
 
-# Title
+# Titles
 pygame.display.set_caption("Game")
 
 # background
@@ -130,7 +130,8 @@ while running:
                           entities)
         elif entity.type == 'mob':
             entity.update(time_passed_seconds, player, current_time, mobs)
-        if entity.health_points <= 0 and entity.type != 'player':
+
+        if not entity.is_alive and entity.type != 'player' and entity.init_state:
             entities.pop(entities.index(entity))
             if random.random() > 0.30:
                 items.append(Potion(50, 'healing_potion',

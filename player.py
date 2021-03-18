@@ -12,15 +12,14 @@ class Player():
     def __init__(self):
         self.type = 'player'
 
+        self.entity_id = 0
         self.is_alive = True
 
         self.flip = False
-        self.animation_list = []
+        self.animation_list = animation_list[self.entity_id]
         self.frame_index = 0
-        self.action = 0
+        self.action = 3
         self.update_time = pygame.time.get_ticks()
-
-        self.animation_list = load_animations(self.type, 100, 100)
 
         self.image = self.animation_list[self.action][self.frame_index]
         self.rect = self.image.get_rect()
@@ -36,8 +35,8 @@ class Player():
         self.cooldowns = {'melee': 2000, 'range': 2000}
 
         # attack damage
-        self.shoot_damage = 10
-        self.melee_damage = 200
+        self.shoot_damage = 200
+        self.melee_damage = 180
 
         # speed
         self.speed = 250
@@ -211,7 +210,6 @@ class Player():
 
     def set_action(self, new_action):
         # check if the new action != previous
-        print(f'setupujem {new_action}')
         if int(new_action) != self.action:
             self.action = new_action
             # update animation from start

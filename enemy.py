@@ -10,14 +10,15 @@ Vector2 = pygame.math.Vector2
 class Enemy():
     def __init__(self, x, y):
         self.type = 'mob'
-        # image
-        self.flip = False
-        self.animation_list = []
-        self.frame_index = 0
-        self.action = 0
-        self.update_time = pygame.time.get_ticks()
 
-        self.animation_list = load_animations(self.type, 80, 80)
+        self.entity_id = 2
+        self.is_alive = True
+
+        self.flip = False
+        self.animation_list = animation_list[self.entity_id]
+        self.frame_index = 0
+        self.action = 3
+        self.update_time = pygame.time.get_ticks()
 
         self.image = self.animation_list[self.action][self.frame_index]
         # rect
@@ -28,8 +29,8 @@ class Enemy():
         # hitbox
         self.hitbox = pygame.Rect(self.rect.x + 10, self.rect.y + 35, 70, 100)
         # hp
-        self.max_hp = 100
-        self.health_points = 100
+        self.max_hp = 200
+        self.health_points = 200
 
         self.hp_bar_width = self.rect.w
 
@@ -45,9 +46,13 @@ class Enemy():
         self.approach_radius = 120
         # states
         self.states = {'SEEKING': 'SEEKING', 'HUNTING': 'HUNTING',
-                       'FLEE': 'FLEE', 'SACRIFICE': 'SACRIFICE'}
+                       'FLEE': 'FLEE', 'SACRIFICE': 'SACRIFICE',
+                       'HURTING': 'HURTING', 'DYING': 'DYING',
+                       'ATTACKING': 'ATTACKING', 'IDLING': 'IDLING'}
+
         self.state = self.states['SEEKING']
 
+        self.last_state = ''
         self.init_state = True
 
         self.timer = 0
@@ -56,45 +61,69 @@ class Enemy():
         self.left_border, self.right_border = -380, 1500
         self.player_border_min_y, self.player_border_max_y = 120, 640
 
+        self.desired = Vector2(0, 0)
+
         self.vector1 = Vector2(0, 0)
         self.vector2 = Vector2(0, 0)
         self.vector3 = Vector2(0, 0)
         self.vector4 = Vector2(0, 0)
 
     def update(self, time, player, current_time, mobs):
-        if self.state == 'SEEKING':
-            self.acceleration += self.state_seeking(
-                time, player, current_time, mobs)
-        elif self.state == 'HUNTING':
-            self.acceleration += self.state_hunting(
-                time, player, current_time, mobs)
-        elif self.state == 'FLEE':
-            self.acceleration += self.state_flee(time,
-                                                 player, current_time, mobs)
-        elif self.state == 'SACRIFICE':
-            self.acceleration += self.state_sacrifice(
-                time, player, current_time)
+        self.update_animation()
 
-        # print(self.acceleration.length())
+        if self.is_alive:
+            if self.desired[0] <= 0:
+                self.flip = True
+            else:
+                self.flip = False
 
-        if(self.rect.x < self.left_border):
-            self.rect.x = self.left_border
-        if(self.rect.x > self.right_border - self.rect.width):
-            self.rect.x = self.right_border - self.rect.width
+            if self.state == 'SEEKING':
+                self.acceleration += self.state_seeking(
+                    time, player, current_time, mobs)
+            elif self.state == 'HUNTING':
+                self.acceleration += self.state_hunting(
+                    time, player, current_time, mobs)
+            elif self.state == 'FLEE':
+                self.acceleration += self.state_flee(time,
+                                                     player, current_time, mobs)
+            elif self.state == 'SACRIFICE':
+                self.acceleration += self.state_sacrifice(
+                    time, player, current_time)
+            if self.init_state:
+                if self.state == 'HURTING':
+                    self.init_state = False
+                    self.set_action(Animation_type.Hurt)
+                elif self.state == 'IDLING':
+                    self.set_action(Animation_type.Idle_Blinking)
+                elif self.state == 'ATTACKING':
+                    self.init_state = False
+                    self.set_action(Animation_type.Kicking)
 
-        if(self.rect.y < self.player_border_min_y):
-            self.rect.y = self.player_border_min_y
-        if(self.rect.y > self.player_border_max_y - self.rect.height):
-            self.rect.y = self.player_border_max_y - self.rect.height
+            if(self.rect.x < self.left_border):
+                self.rect.x = self.left_border
+            if(self.rect.x > self.right_border - self.rect.width):
+                self.rect.x = self.right_border - self.rect.width
 
-        self.rect.center += self.acceleration
+            if(self.rect.y < self.player_border_min_y):
+                self.rect.y = self.player_border_min_y
+            if(self.rect.y > self.player_border_max_y - self.rect.height):
+                self.rect.y = self.player_border_max_y - self.rect.height
 
-        self.hitbox[0] = self.rect.x + 10
-        self.hitbox[1] = self.rect.y + 35
+            self.rect.center += self.acceleration
+
+            self.hitbox[0] = self.rect.x + 10
+            self.hitbox[1] = self.rect.y + 35
+
+        elif self.state == self.states['DYING'] and not self.init_state:
+            self.init_state = False
+            self.set_action(Animation_type.Dying)
+
+        print(f'{self.state} & {self.action} & {self.frame_index} & {self.init_state}')
 
     def draw(self, display, offset_x, offset_y, player):
-        display.blit(self.image, (self.rect.x -
-                                  offset_x, self.rect.y - offset_y))
+        display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
+                                                                           offset_x, self.rect.y - offset_y))
+
         pygame.draw.rect(display, (255, 0, 0), [
                          self.hitbox[0] - offset_x, self.hitbox[1] - offset_y, 70, 100], 2)
 
@@ -118,22 +147,28 @@ class Enemy():
                                                                                                                                     offset_y), 5)
 
     def hit(self, damage):
-        self.health_points -= damage
+        if self.health_points - damage <= 0:
+            self.is_alive = False
+            self.state = self.states['DYING']
+            self.health_points = 0
+        elif self.is_alive and self.state != self.states['DYING'] and self.state != self.states['HURTING']:
+            self.last_state = self.state
+            self.state = self.states['HURTING']
+            self.health_points -= damage
+            self.init_state = True
 
     def state_seeking(self, time, player, current_time, mobs):
         if self.init_state:
             self.heading = pygame.Rect(
-                randint(-268, 746), randint(-380, 1500), 70, 100)
-            self.speed = 100
+                randint(-268, 746), randint(-380, 1500), 1, 1)
+            self.speed = 70
             self.timer = pygame.time.get_ticks()
+            self.set_action(Animation_type.Walking)
             self.init_state = False
 
         if is_close(self.hitbox, player.rect, 200) or not self.health_points == self.max_hp:
+            self.init_state = True
             self.state = self.states['HUNTING']
-            self.init_state = True
-        elif self.health_points <= 20:
-            self.state = self.states['FLEE']
-            self.init_state = True
 
         if current_time - self.timer > 5000:
             self.set_destination()
@@ -145,42 +180,35 @@ class Enemy():
         if self.init_state:
             self.speed = 150
             self.timer = pygame.time.get_ticks()
+            self.set_action(Animation_type.Running)
             self.init_state = False
 
-        # elif self.health_points <= 20:
-        #     self.state = self.states['FLEE']
-        #     self.init_state = True
-
-        if is_close(self.hitbox, player.rect, 25) and current_time - self.timer > 2000:
+        if is_close(self.hitbox, player.rect, 25) and current_time - self.timer > 2000 and self.init_state:
+            self.set_action(Animation_type.Kicking)
+            self.init_state = False
             player.hit(self.damage)
             self.timer = pygame.time.get_ticks()
 
         return self.seek_with_approach(player.rect.center, time, mobs)
 
-    def state_flee(self, time, player, current_time):
+    def state_flee(self, time, player, current_time, mobs):
         if self.init_state:
             self.speed = 100
             self.timer = pygame.time.get_ticks()
+            self.set_action(Animation_type.Running)
             self.init_state = False
 
-        # if not is_close(self.hitbox, player.rect, 200):
-        #     # if boss exist -> sacrifice
-        #     # else seek with regeneration
-        #     self.state = self.states['SEEKING']
-        #     self.init_state = True
-
-        return self.flee(player.rect, time)
+        return self.flee(player.rect, time, mobs)
 
     def state_sacrifice(self):
         if self.init_state:
             self.speed = 200
             self.timer = pygame.time.get_ticks()
-            self.init_state = False
         pass
 
     def set_destination(self):
         self.heading = pygame.Rect(
-            randint(-268 + 70, 746 - 70), randint(120 + 100, 640 - 100), 70, 100)
+            randint(-268 + 70, 746 - 70), randint(120 + 100, 640 - 100), 1, 1)
 
     def seek_with_approach(self, target, time, mobs):
         # vector from position -> target position
@@ -204,9 +232,10 @@ class Enemy():
             self.avoid_mobs(mobs, time)
             return steer
         else:
+            self.set_action(Animation_type.Idle_Blinking)
             return Vector2(0, 0)
 
-    def flee(self, target, time):
+    def flee(self, target, time, mobs):
         steer = Vector2(0, 0)
         distance = Vector2(self.hitbox.centerx - target.centerx,
                            self.hitbox.y - target.centery)
@@ -214,7 +243,7 @@ class Enemy():
         steer = (self.desired - self.acceleration)
         if steer.length() > self.max_force:
             steer.scale_to_length(self.max_force)
-
+        self.avoid_mobs(mobs, time)
         return steer
 
     def avoid_mobs(self, mobs, time):
@@ -228,3 +257,40 @@ class Enemy():
                     self.acceleration.scale_to_length(
                         self.desired.length())
                     self.vector2 = self.acceleration
+
+    def update_animation(self):
+        ANIMATION_COOLDOWN = 50
+        # update image depending on current frame
+        self.image = self.animation_list[self.action][self.frame_index]
+        # check if time passed since last update
+        if self.action == int(Animation_type.Kicking) or self.action == int(Animation_type.Hurt):
+            ANIMATION_COOLDOWN = 30
+
+        if pygame.time.get_ticks() - self.update_time > ANIMATION_COOLDOWN:
+            self.update_time = pygame.time.get_ticks()
+            self.frame_index += 1
+        # out of images - resets
+        if self.frame_index >= len(self.animation_list[self.action]):
+            if self.action == int(Animation_type.Dying):
+                self.frame_index = len(self.animation_list[self.action]) - 1
+                self.init_state = True
+            elif self.action == int(Animation_type.Kicking):
+                self.state = self.states['HUNTING']
+                self.init_state = True
+            elif self.action == int(Animation_type.Hurt):
+                self.init_state = True
+                if self.is_alive and self.health_points <= 20:
+                    self.state = self.states['FLEE']
+                elif self.is_alive:
+                    self.state = self.last_state
+
+            else:
+                self.frame_index = 0
+
+    def set_action(self, new_action):
+        # check if the new action != previous
+        if int(new_action) != self.action:
+            self.action = new_action
+            # update animation from start
+            self.frame_index = 0
+            self.update_time = pygame.time.get_ticks()

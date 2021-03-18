@@ -32,19 +32,3 @@ class Animation_type(IntEnum):
     Throwing = 10,
     Throwing_in_The_Air = 11,
     Walking = 12,
-
-
-# animation_types = ['Idle', 'Running', 'Dying']
-#         # load all images for the players
-#         for animation in animation_types:
-#             # reset temporary list of images
-#             temp_list = []
-#             # count number of files in the folder
-#             num_of_frames = len(os.listdir(
-#                 f'data/images/entities/{self.type}/{animation}'))
-#             for i in range(num_of_frames):
-#                 img = pygame.image.load(
-#                     f'data/images/entities/{self.type}/{animation}/{i}.png')
-#                 img = pygame.transform.scale(img, (64, 128))
-#                 temp_list.append(img)
-#             self.animation_list.append(temp_list)

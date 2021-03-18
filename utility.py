@@ -33,26 +33,43 @@ def summon(object, x, y, number):
     return mobs
 
 
-def load_animations(entity_type, w, h):
+def load_animations():
     animation_types = ['Dying', 'Hurt', 'Idle', 'Idle Blinking', 'Kicking', 'Run Slashing', 'Run Throwing',
                        'Running', 'Slashing', 'Slashing in The Air', 'Throwing', 'Throwing in The Air', 'Walking']
-    list_of_loaded_animations = []
-    # load all images for the players
-    for animation in animation_types:
-        # reset temporary list of images
-        temp_list = []
-        # count number of files in the folder
-        if os.path.isdir(f'data/images/entities/{entity_type}/{animation}'):
-            num_of_frames = len(os.listdir(
-                f'data/images/entities/{entity_type}/{animation}'))
+    entity_types = ['player', 'boss', 'mob']
 
-            for i in range(num_of_frames):
-                img = pygame.image.load(
-                    f'data/images/entities/{entity_type}/{animation}/{i}.png')
-                img = pygame.transform.scale(img, (w, h))
-                temp_list.append(img)
-            list_of_loaded_animations.append(temp_list)
-        else:
-            print(f'skipped {animation}')
+    list_of_loaded_animations = []
+    for entity_type in entity_types:
+        entity_animations = []
+        if entity_type == 'player':
+            w = h = 120
+        elif entity_type == 'mob':
+            w = h = 100
+        elif entity_type == 'boss':
+            w = h = 200
+        # load all images for the players
+        for animation in animation_types:
+            # reset temporary list of images
+            temp_list = []
+            # count number of files in the folder
+            if os.path.isdir(f'data/images/entities/{entity_type}/{animation}'):
+                num_of_frames = len(os.listdir(
+                    f'data/images/entities/{entity_type}/{animation}'))
+
+                for i in range(num_of_frames):
+                    # print(f'{entity_type} & {animation} - {i}')
+                    img = pygame.image.load(
+                        f'data/images/entities/{entity_type}/{animation}/{i}.png')
+                    img = pygame.transform.scale(img, (w, h))
+                    temp_list.append(img)
+
+                entity_animations.append(temp_list)
+            else:
+                entity_animations.append([])
+
+        list_of_loaded_animations.append(entity_animations)
 
     return list_of_loaded_animations
+
+
+animation_list = load_animations()

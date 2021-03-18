@@ -31,8 +31,10 @@ class Projectile(object):
 
     def update(self, time):
         if self.type == 'player':
+            self.damage = 50
             self.rect.x += (self.speed * time)
         elif self.type == 'boss':
+            self.damage = 20
             self.position += self.desired * time * self.speed
             self.rect.center = self.position
 

@@ -10,13 +10,14 @@ class Boss():
     def __init__(self):
         self.type = 'boss'
 
-        self.flip = False
-        self.animation_list = []
-        self.frame_index = 0
-        self.action = 0
-        self.update_time = pygame.time.get_ticks()
+        self.entity_id = 1
+        self.is_alive = True
 
-        self.animation_list = load_animations(self.type, 150, 200)
+        self.flip = False
+        self.animation_list = animation_list[self.entity_id]
+        self.frame_index = 0
+        self.action = 3
+        self.update_time = pygame.time.get_ticks()
 
         self.image = self.animation_list[self.action][self.frame_index]
         # rect
@@ -31,6 +32,7 @@ class Boss():
 
         self.cooldowns = {'summon': 15000, 'whirlwind': 10000, 'orbs': 5000}
 
+        self.init_state = True
         # speed
         self.speed = 200
         # healthpoints
