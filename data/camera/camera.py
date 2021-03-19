@@ -63,14 +63,14 @@ class Border(CamScroll):
 
         # x axis handle
         self.camera.offset.x = int(max(
-            self.player.left_border, self.camera.offset.x))
+            CAMERA_LEFT, self.camera.offset.x))
         self.camera.offset.x = int(min(
-            self.camera.offset.x, self.player.right_border - self.camera.DISPLAY_W))
+            self.camera.offset.x, CAMERA_RIGHT - self.camera.DISPLAY_W))
         # y axis handle
         self.camera.offset.y = int(max(
-            self.player.top_border, self.camera.offset.y))
+            CAMERA_TOP, self.camera.offset.y))
         self.camera.offset.y = int(min(
-            self.camera.offset.y, self.player.bottom_border - self.camera.DISPLAY_H))
+            self.camera.offset.y, CAMERA_BOTTOM - self.camera.DISPLAY_H))
 
 
 # camera with automatic linear movement

@@ -22,10 +22,19 @@ class Player():
         self.update_time = pygame.time.get_ticks()
 
         self.image = self.animation_list[self.action][self.frame_index]
-        self.rect = self.image.get_rect()
+        self.rect = self.image.get_rect(width=70, height=80)
+
+        # image properties
+        self.image_height = self.image.get_height()
+        self.image_width = self.image.get_width()
         # hitbox
+        self.hitbox_x_offset = 25
+        self.hitbox_y_offset = 20
+
         self.hitbox = pygame.Rect(
-            (self.rect.x, self.rect.y, self.image.get_width(), self.image.get_height()))
+            (self.rect.x + self.hitbox_x_offset, self.rect.y + self.hitbox_y_offset, self.rect.width, self.rect.height))
+
+        self.rect.center = -100, 100
 
         self.moving_left = False
         self.moving_right = True
@@ -47,11 +56,6 @@ class Player():
         # healthpoints
         self.health_points = 100
         self.max_health = 200
-
-        # camera borders
-        self.top_border, self.bottom_border = -268, 746
-        self.left_border, self.right_border = -380, 1500
-        self.player_border_min_y, self.player_border_max_y = 120, 640
 
         self.states = {'IDLING': 'IDLING', 'RUNNING': 'RUNNING',
                        'ATTACKING': 'ATTACKING', 'FIRING': 'FIRING', 'DYING': 'DYING',
@@ -77,7 +81,7 @@ class Player():
                     self.projectiles.pop(
                         self.projectiles.index(projectile))
 
-                elif projectile.rect.x > 1500 or projectile.rect.x < -380:
+                elif projectile.rect.x > RIGHT_BORDER or projectile.rect.x < LEFT_BORDER:
                     self.projectiles.pop(
                         self.projectiles.index(projectile))
 
@@ -118,14 +122,12 @@ class Player():
         self.rect, collisions = self.move(
             self.rect, movement, new_entities, time)
 
-        self.hitbox = pygame.Rect(
-            (self.rect.x, self.rect.y, self.image.get_width(), self.image.get_height()))
-
     def move(self, rect, movement, new_entities, time):
         collision_types = {'top': False, 'bottom': False,
                            'left': False, 'right': False}
 
         self.rect.x += movement[0] * time * self.speed
+
         # collisions on x axis
         collision_list = check_collision(self.rect, new_entities)
         # we check if we collide with obstacle, first we check X axis coords, then y axis
@@ -140,12 +142,14 @@ class Player():
         #         self.rect.left = col.hitbox.right
         #         collision_types['left'] = True
 
-        if(self.rect.x < self.left_border):
-            self.rect.x = self.left_border
-        if(self.rect.x > self.right_border - self.rect.width):
-            self.rect.x = self.right_border - self.rect.width
+        if self.rect.x + self.hitbox_x_offset < LEFT_BORDER:
+            self.rect.x = LEFT_BORDER - self.hitbox_x_offset
+        if(self.rect.x + self.rect.width + self.hitbox_x_offset > RIGHT_BORDER):
+            self.rect.x = RIGHT_BORDER - self.rect.width - self.hitbox_x_offset
+        self.hitbox.x = self.rect.x + self.hitbox_x_offset
 
         self.rect.y += movement[1] * time * self.speed
+
         # collisions on y axis
         collision_list = check_collision(self.rect, new_entities)
         # for col in collision_list:
@@ -158,10 +162,11 @@ class Player():
         #         self.rect.top = col.hitbox.bottom
         #         collision_types['top'] = True
 
-        if(self.rect.y < self.player_border_min_y):
-            self.rect.y = self.player_border_min_y
-        if(self.rect.y > self.player_border_max_y - self.rect.height):
-            self.rect.y = self.player_border_max_y - self.rect.height
+        if self.rect.y + self.image_height - self.hitbox_y_offset < TOP_BORDER:
+            self.rect.y = TOP_BORDER - self.image_height + self.hitbox_y_offset
+        if self.rect.y + self.image_height - self.hitbox_y_offset > BOTTOM_BORDER:
+            self.rect.y = BOTTOM_BORDER - self.image_height + self.hitbox_y_offset
+        self.hitbox.y = self.rect.y + self.hitbox_y_offset
 
         return self.rect, collision_types
 
@@ -172,9 +177,11 @@ class Player():
                 projectile.draw(display, offset_x, offset_y)
         display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
                                                                            offset_x, self.rect.y - offset_y))
-        self.hitbox = pygame.Rect(
-            (self.rect.x - offset_x, self.rect.y - offset_y, self.image.get_width(), self.image.get_height()))
-        pygame.draw.rect(display, (255, 0, 0), self.hitbox, 2)
+        pygame.draw.rect(display, (255, 0, 0), [
+                         self.hitbox.x - offset_x, self.hitbox.y - offset_y, self.rect.width, self.rect.height], 2)
+
+        pygame.draw.rect(display, (255, 122, 0), [
+                         self.rect.x - offset_x, self.rect.y - offset_y, self.rect.width, self.rect.height], 2)
 
     def hit(self, damage):
         if self.is_alive:
@@ -222,7 +229,7 @@ class Player():
         else:
             direction = -1
         attack = pygame.Rect(self.rect.x + (self.rect.w*direction), self.rect.y,
-                             36, 64)
+                             self.rect.width, self.rect.height)
         collision_list = check_collision(attack, new_entities)
         for col in collision_list:
             col.hit(self.melee_damage)

@@ -55,7 +55,7 @@ current_time = 0
 attack_with_delay = USEREVENT
 
 pygame.time.set_timer(attack_with_delay, 2000)
-melee_attack_time = whirlwind_activation_time = range_attack_time = -100000
+melee_attack_time = range_attack_time = whirlwind_activation_time = -100000
 
 # Game Loop
 while running:
@@ -118,7 +118,7 @@ while running:
             enemies_count += 1
 
     if enemies_count == 0:
-        mobs = summon(Enemy, 500, 200, 1)
+        mobs = summon(Enemy, 20, 200, 1)
         entities.extend(mobs)
 
     for entity in entities:
@@ -137,8 +137,8 @@ while running:
                 items.append(Potion(50, 'healing_potion',
                                     entity.hitbox.center, 32, 32))
 
-    if current_time % 100 == 0:
-        boss.shoot(player.rect.center, time_passed_seconds)
+    # if current_time % 100 == 0:
+    #     boss.shoot(player.rect.center, time_passed_seconds)
 
     if is_close(boss.hitbox, player.hitbox, 200) and current_time - whirlwind_activation_time > boss.cooldowns['whirlwind']:
         whirlwind_activation_time = pygame.time.get_ticks()
