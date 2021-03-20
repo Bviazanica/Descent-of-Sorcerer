@@ -51,11 +51,8 @@ camera.setmethod(border)
 running = True
 current_time = 0
 
-# player cooldowns
-attack_with_delay = USEREVENT
-
-pygame.time.set_timer(attack_with_delay, 2000)
-melee_attack_time = range_attack_time = whirlwind_activation_time = summon_activation_time = fire_activation_time = -100000
+# player cooldownsdd
+melee_attack_time = range_attack_time = -100000
 
 # Game Loop
 while running:
@@ -111,38 +108,19 @@ while running:
 
         movement.normalize()
 
-    enemies_count = 0
-
-    for entity in entities:
-        if entity.type == 'mob':
-            enemies_count += 1
-
-    if current_time % 1000 and boss.init_state:
-        boss.state = boss.states['FIRING']
-    # cooldowns to attacking classes
-    if enemies_count == 0 and current_time - summon_activation_time > boss.cooldowns['summon']:
-        boss.state = boss.states['SUMMONING']
-        mobs = summon(Enemy, 20, 200, 1)
-        entities.extend(mobs)
-
-    if is_close(boss.hitbox, player.hitbox, 200) and current_time - whirlwind_activation_time > boss.cooldowns['whirlwind']:
-        whirlwind_activation_time = pygame.time.get_ticks()
-        boss.ready_to_attack = True
-
-    if pygame.event.get(attack_with_delay) and boss.ready_to_attack:
-        boss.state = boss.states['ATTACKING']
-        boss.whirlwind(player)
-        boss.ready_to_attack = False
-
     for entity in entities:
         if entity.type == 'player':
-            entity.update(canvas, time_passed_seconds, movement,
+            entity.update(time_passed_seconds, movement,
                           entities)
         elif entity.type == 'boss':
-            entity.update(canvas, player, time_passed_seconds, movement,
-                          entities)
+            entity.update(player, time_passed_seconds, movement,
+                          entities, Enemy)
+            if entity.entities_summoned:
+                entities.extend(entity.get_summoned_entities())
+                entity.entities_summoned = False
         elif entity.type == 'mob':
-            entity.update(time_passed_seconds, player, current_time, mobs)
+            entity.update(time_passed_seconds, player,
+                          get_entities(entities, 'mob'))
 
         if not entity.is_alive and entity.type != 'player' and entity.init_state:
             entities.pop(entities.index(entity))

@@ -24,21 +24,20 @@ class Player():
         # local time
         self.update_time = pygame.time.get_ticks()
 
-        self.rect = self.image.get_rect(width=70, height=80)
-
         # image properties
         self.flip = False
         self.image = self.animation_list[self.action][self.frame_index]
         self.image_height = self.image.get_height()
         self.image_width = self.image.get_width()
+
+        self.rect = self.image.get_rect(width=70, height=80)
+        self.rect.center = -100, 100
         # hitbox
         self.hitbox_x_offset = 25
         self.hitbox_y_offset = 20
 
         self.hitbox = pygame.Rect(
             (self.rect.x + self.hitbox_x_offset, self.rect.y + self.hitbox_y_offset, self.rect.width, self.rect.height))
-
-        self.rect.center = -100, 100
 
         self.facing_positive = True
         # cooldowns
@@ -55,7 +54,7 @@ class Player():
         self.projectiles = []
 
         # healthpoints
-        self.health_points = 100
+        self.health_points = 300000
         self.max_health = 200
 
         self.states = {'IDLING': 'IDLING', 'RUNNING': 'RUNNING',
@@ -66,12 +65,13 @@ class Player():
 
         self.init_state = True
 
+        self.ready_to_fire = True
+
     # update position
 
-    def update(self, display, time, movement, entities):
+    def update(self, time, movement, entities):
         new_entities = new_list_without_self(self, entities)
         self.update_animation()
-
         if self.projectiles:
             for projectile in self.projectiles:
                 collision_list = check_collision(
@@ -89,12 +89,12 @@ class Player():
                 else:
                     projectile.update(time)
 
-        if self.init_state:
+        if self.init_state or self.state == self.states['HURTING']:
             if self.facing_positive:
                 self.flip = False
             else:
                 self.flip = True
-
+        if self.init_state:
             if self.state == 'IDLING':
                 self.set_action(Animation_type.Idle_Blinking)
             elif self.state == 'RUNNING':
@@ -106,19 +106,16 @@ class Player():
                 self.init_state = False
                 self.set_action(Animation_type.Dying)
             elif self.state == 'RUNNING-ATTACKING':
-                self.state_running_attacking(
-                    display, new_entities)
+                self.state_running_attacking(new_entities)
             elif self.state == 'RUNNING-FIRING':
-                self.state_running_firing(
-                    display)
+                self.state_running_firing()
             elif self.state == 'ATTACKING':
                 self.init_state = False
                 self.set_action(Animation_type.Slashing)
-                self.melee_attack(display, new_entities)
+                self.melee_attack(new_entities)
             elif self.state == 'FIRING':
                 self.init_state = False
                 self.set_action(Animation_type.Throwing_in_The_Air)
-                self.fire(display)
 
         self.rect, collisions = self.move(
             self.rect, movement, new_entities, time)
@@ -193,14 +190,26 @@ class Player():
         if pygame.time.get_ticks() - self.update_time > ANIMATION_COOLDOWN:
             self.update_time = pygame.time.get_ticks()
             self.frame_index += 1
+
+        if (self.action == int(Animation_type.Throwing_in_The_Air) or self.action == int(Animation_type.Throwing_in_The_Air)) and self.frame_index == 2 and self.ready_to_fire:
+            self.fire()
+            self.ready_to_fire = False
         # out of images - resets
         if self.frame_index >= len(self.animation_list[self.action]):
             if self.action == int(Animation_type.Dying):
                 self.frame_index = len(self.animation_list[self.action]) - 1
-            elif self.action == int(Animation_type.Slashing) or self.action == int(Animation_type.Throwing_in_The_Air):
+            elif self.action == int(Animation_type.Slashing):
                 self.init_state = True
                 self.state = self.states['IDLING']
-            elif self.action == int(Animation_type.Run_Slashing) or self.action == int(Animation_type.Run_Throwing):
+            elif self.action == int(Animation_type.Throwing_in_The_Air):
+                self.ready_to_fire = True
+                self.init_state = True
+                self.state = self.states['IDLING']
+            elif self.action == int(Animation_type.Run_Slashing):
+                self.init_state = True
+                self.state = self.states['RUNNING']
+            elif self.action == int(Animation_type.Run_Throwing):
+                self.ready_to_fire = True
                 self.init_state = True
                 self.state = self.states['RUNNING']
             elif self.action == int(Animation_type.Hurt):
@@ -217,34 +226,37 @@ class Player():
             self.frame_index = 0
             self.update_time = pygame.time.get_ticks()
 
-    def melee_attack(self, display, new_entities):
+    def melee_attack(self, new_entities):
         if self.facing_positive:
             direction = 1
         else:
             direction = -1
-        attack = pygame.Rect(self.rect.x + (self.rect.w*direction), self.rect.y,
+        attack = pygame.Rect(self.rect.x + ((self.rect.w - self.hitbox_x_offset)*direction), self.rect.y,
                              self.rect.width, self.rect.height)
         collision_list = check_collision(attack, new_entities)
         for col in collision_list:
             col.hit(self.melee_damage)
 
-    def fire(self, display):
+    def fire(self):
         if self.facing_positive:
             direction = 1
+            projectile = Projectile(
+                Vector2(self.hitbox.x + self.hitbox.w, self.hitbox.centery), direction, Vector2(0, 0), 'player')
         else:
             direction = -1
-        projectile = Projectile(
-            Vector2(self.rect.x + self.rect.w // 2, self.rect.y + self.rect.h // 2), direction, Vector2(0, 0), 'player')
+            projectile = Projectile(
+                Vector2(self.hitbox.x, self.hitbox.centery), direction, Vector2(0, 0), 'player')
+
         self.projectiles.append(projectile)
 
-    def state_running_attacking(self, display, new_entities):
+    def state_running_attacking(self, new_entities):
         if self.init_state:
             self.init_state = False
             self.set_action(Animation_type.Run_Slashing)
-            self.melee_attack(display, new_entities)
+            self.melee_attack(new_entities)
 
-    def state_running_firing(self, display):
+    def state_running_firing(self):
         if self.init_state:
             self.init_state = False
             self.set_action(Animation_type.Run_Throwing)
-            self.fire(display)
+            self.fire()

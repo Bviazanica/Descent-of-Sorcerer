@@ -49,6 +49,9 @@ class Enemy():
         self.speed = 200
         self.acceleration = Vector2(0, 0)
 
+        # cooldown on abilities
+        self.cooldowns = {'attack': 2000, 'new_destination': 5000}
+        self.attack_time = self.new_destination_time = -100000
         # attack damage
         self.damage = 5
 
@@ -67,8 +70,6 @@ class Enemy():
         self.last_state = ''
         self.init_state = True
 
-        self.timer = 0
-
         # vector for desired location
         self.desired = Vector2(0, 0)
 
@@ -77,10 +78,11 @@ class Enemy():
         self.top_right = Vector2(0, 0)
         self.bottom_left = Vector2(0, 0)
         self.bottom_right = Vector2(0, 0)
+        self.vector2 = Vector2(0, 0)
 
-    def update(self, time, player, current_time, mobs):
+    def update(self, tick, player, mobs):
+        self.local_time = pygame.time.get_ticks()
         self.update_animation()
-
         if self.is_alive:
             if self.desired[0] <= 0:
                 self.flip = True
@@ -89,16 +91,16 @@ class Enemy():
 
             if self.state == 'SEEKING':
                 self.acceleration += self.state_seeking(
-                    time, player, current_time, mobs)
+                    tick, player, mobs)
             elif self.state == 'HUNTING':
                 self.acceleration += self.state_hunting(
-                    time, player, current_time, mobs)
+                    tick, player, mobs)
             elif self.state == 'FLEE':
-                self.acceleration += self.state_flee(time,
-                                                     player, current_time, mobs)
+                self.acceleration += self.state_flee(tick,
+                                                     player, mobs)
             elif self.state == 'SACRIFICE':
                 self.acceleration += self.state_sacrifice(
-                    time, player, current_time)
+                    tick, player)
             if self.init_state:
                 if self.state == 'HURTING':
                     self.init_state = False
@@ -109,6 +111,7 @@ class Enemy():
                     self.init_state = False
                     self.set_action(Animation_type.Kicking)
 
+            self.avoid_mobs(mobs)
             self.rect.center += self.acceleration
 
             check_boundaries_for_x(self)
@@ -146,9 +149,9 @@ class Enemy():
         #                                                               offset_y), (self.hitbox.center + self.vector1 * 25) - Vector2(offset_x,
         #                                                                                                                             offset_y), 5)
 
-        # pygame.draw.line(display, WHITE, self.hitbox.center - Vector2(offset_x,
-        #                                                               offset_y), (self.hitbox.center + self.vector2 * 25) - Vector2(offset_x,
-        #                                                                                                                             offset_y), 5)
+        pygame.draw.line(display, WHITE, self.hitbox.center - Vector2(offset_x,
+                                                                      offset_y), (self.hitbox.center + self.vector2 * 25) - Vector2(offset_x,
+                                                                                                                                    offset_y), 5)
 
     def hit(self, damage):
         if self.health_points - damage <= 0:
@@ -161,82 +164,80 @@ class Enemy():
             self.health_points -= damage
             self.init_state = True
 
-    def state_seeking(self, time, player, current_time, mobs):
+    def state_seeking(self, time, player, mobs):
         if self.init_state:
             self.heading = pygame.Rect(
                 randint(-268, 746), randint(-380, 1500), 1, 1)
             self.speed = 70
-            self.timer = pygame.time.get_ticks()
             self.set_action(Animation_type.Walking)
             self.init_state = False
 
-        if is_close(self.hitbox, player.rect, 200) or not self.health_points == self.max_hp:
+        if is_close(self.hitbox, player.hitbox, 200) or not self.health_points == self.max_hp:
             self.init_state = True
             self.state = self.states['HUNTING']
 
-        if current_time - self.timer > 5000:
+        if self.local_time - self.new_destination_time > self.cooldowns['new_destination']:
+            self.new_destination_time = pygame.time.get_ticks()
             self.set_destination()
-            self.timer = pygame.time.get_ticks()
+            print('reaching destination')
 
         return self.seek_with_approach(self.heading.center, time, mobs)
 
-    def state_hunting(self, time, player, current_time, mobs):
+    def state_hunting(self, time, player, mobs):
         if self.init_state:
             self.speed = 150
-            self.timer = pygame.time.get_ticks()
             self.set_action(Animation_type.Running)
             self.init_state = False
 
-        if is_close(self.hitbox, player.rect, 25) and current_time - self.timer > 2000 and self.init_state:
+        if is_close(self.hitbox, player.hitbox, 30) and self.local_time - self.attack_time > self.cooldowns['attack']:
+            print("attack :)")
+            self.attack_time = pygame.time.get_ticks()
             self.set_action(Animation_type.Kicking)
             self.init_state = False
             player.hit(self.damage)
-            self.timer = pygame.time.get_ticks()
 
-        self.top_left = Vector2(
-            player.hitbox.topleft[0] - self.hitbox.center[0], player.hitbox.topleft[1] - self.hitbox.center[1]).length()
-        self.top_right = Vector2(player.hitbox.topright[0] - self.hitbox.center[0],
-                                 player.hitbox.topright[1] - self.hitbox.center[1]).length()
-        self.bottom_left = Vector2(
-            player.hitbox.bottomleft[0] - self.hitbox.center[0], player.hitbox.bottomleft[1] - self.hitbox.center[1]).length()
-        self.bottom_right = Vector2(
-            player.hitbox.bottomright[0] - self.hitbox.center[0], player.hitbox.bottomright[1] - self.hitbox.center[1]).length()
+        # self.top_left = Vector2(
+        #     player.hitbox.topleft[0] - self.hitbox.center[0], player.hitbox.topleft[1] - self.hitbox.center[1]).length()
+        # self.top_right = Vector2(player.hitbox.topright[0] - self.hitbox.center[0],
+        #                          player.hitbox.topright[1] - self.hitbox.center[1]).length()
+        # self.bottom_left = Vector2(
+        #     player.hitbox.bottomleft[0] - self.hitbox.center[0], player.hitbox.bottomleft[1] - self.hitbox.center[1]).length()
+        # self.bottom_right = Vector2(
+        #     player.hitbox.bottomright[0] - self.hitbox.center[0], player.hitbox.bottomright[1] - self.hitbox.center[1]).length()
 
         # print(
         #     f'{self.top_left,self.top_right,self.bottom_left,self.bottom_right}')
 
-        return self.seek_with_approach(player.rect.center, time, mobs)
+        return self.seek_with_approach(player.hitbox.center, time, mobs)
 
-    def state_flee(self, time, player, current_time, mobs):
+    def state_flee(self, tick, player, mobs):
         if self.init_state:
             self.speed = 100
-            self.timer = pygame.time.get_ticks()
             self.set_action(Animation_type.Running)
             self.init_state = False
 
-        return self.flee(player.rect, time, mobs)
+        return self.flee(player.hitbox, tick, mobs)
 
     def state_sacrifice(self):
         if self.init_state:
             self.speed = 200
-            self.timer = pygame.time.get_ticks()
         pass
 
     def set_destination(self):
         self.heading = pygame.Rect(
             randint(-268 + 70, 746 - 70), randint(120 + 100, 640 - 100), 1, 1)
 
-    def seek_with_approach(self, target, time, mobs):
+    def seek_with_approach(self, target, tick, mobs):
         # vector from position -> target position
         self.desired = (
             target - Vector2(self.hitbox.centerx, self.hitbox.centery))
-        dist = self.desired.length()
-        if not dist == 0:
+        distance_length = self.desired.length()
+        if not distance_length == 0:
             self.desired.normalize_ip()
-            if dist < self.approach_radius:
-                self.desired *= dist / self.approach_radius * self.speed * time
+            if distance_length < self.approach_radius:
+                self.desired *= distance_length / self.approach_radius * self.speed * tick
             else:
-                self.desired *= self.speed * time
+                self.desired *= self.speed * tick
 
             # vector from acceleration vector to desired vector position
             steer = (self.desired - self.acceleration)
@@ -244,24 +245,26 @@ class Enemy():
             # scale of vector to have correct length
             if steer.length() > self.max_force:
                 steer.scale_to_length(self.max_force)
-            self.avoid_mobs(mobs, time)
             return steer
         else:
             self.set_action(Animation_type.Idle_Blinking)
             return Vector2(0, 0)
 
-    def flee(self, target, time, mobs):
+    def flee(self, target, tick, mobs):
         steer = Vector2(0, 0)
         distance = Vector2(self.hitbox.centerx - target.centerx,
                            self.hitbox.y - target.centery)
-        self.desired = distance.normalize() * self.speed * time
-        steer = (self.desired - self.acceleration)
-        if steer.length() > self.max_force:
-            steer.scale_to_length(self.max_force)
-        self.avoid_mobs(mobs, time)
+        distance_length = self.desired.length()
+        if not distance_length == 0:
+            self.desired = distance.normalize() * self.speed * tick
+            steer = (self.desired - self.acceleration)
+            if steer.length() > self.max_force:
+                steer.scale_to_length(self.max_force)
+        else:
+            return Vector2(0, 0)
         return steer
 
-    def avoid_mobs(self, mobs, time):
+    def avoid_mobs(self, mobs):
         for mob in mobs:
             if mob != self:
                 distance = Vector2(self.hitbox.centerx - mob.hitbox.centerx,
@@ -270,6 +273,7 @@ class Enemy():
                     self.acceleration += distance.normalize()
                     self.acceleration.scale_to_length(
                         self.desired.length())
+                    self.vector2 = self.acceleration
 
     def update_animation(self):
         ANIMATION_COOLDOWN = 50

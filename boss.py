@@ -44,8 +44,11 @@ class Boss():
             (self.rect.x + self.hitbox_x_offset, self.rect.y + self.hitbox_y_offset, self.rect.width, self.rect.height))
 
         # cooldown on abilities
-        self.cooldowns = {'summon': 15000, 'whirlwind': 10000, 'orbs': 5000}
+        self.cooldowns = {'summon': 5000, 'whirlwind': 10000, 'orbs': 700}
+        self.attack_with_delay = USEREVENT
+        pygame.time.set_timer(self.attack_with_delay, 2000)
 
+        self.whirlwind_activation_time = self.orbs_activation_time = self.summon_activation_time = -10000
         # speed
         self.speed = 200
         # health points & bars properties
@@ -68,18 +71,33 @@ class Boss():
         self.last_state = ''
 
         self.ready_to_attack = False
+        self.ready_to_fire = True
+        self.entities_summoned = False
 
-    def update(self, display, player, time, movement, entities):
+    def update(self, player, time, movement, entities, Mob):
         new_entities = new_list_without_self(self, entities)
         self.desired = (
             player.hitbox.center - Vector2(self.hitbox.centerx, self.hitbox.centery))
-        self.update_animation()
+        self.update_animation(player, Mob)
 
         if self.is_alive:
             if self.desired[0] <= 0:
                 self.flip = True
             else:
                 self.flip = False
+        if self.init_state:
+            if is_close(self.hitbox, player.hitbox, 200) and self.update_time - self.whirlwind_activation_time > self.cooldowns['whirlwind']:
+                self.ready_to_attack = True
+
+            if pygame.event.get(self.attack_with_delay) and self.ready_to_attack:
+                self.state = self.states['ATTACKING']
+        if not self.ready_to_attack and self.init_state:
+            if get_entity_count(new_entities, 'mob') == 0 and self.update_time - self.summon_activation_time > self.cooldowns['summon']:
+                self.state = self.states['SUMMONING']
+            elif self.update_time - self.orbs_activation_time > self.cooldowns['orbs']:
+                self.frame_index = 0
+                self.state = self.states['FIRING']
+
         if self.init_state:
             if self.state == 'IDLING':
                 self.set_action(Animation_type.Idle_Blinking)
@@ -90,15 +108,19 @@ class Boss():
                 self.init_state = False
                 self.set_action(Animation_type.Dying)
             elif self.state == 'SUMMONING':
+                self.summon_activation_time = pygame.time.get_ticks()
                 self.init_state = False
                 self.set_action(Animation_type.Summoning)
+                self.new_entities = summon(Mob, -80, 200, 1)
+                self.entities_summoned = True
             elif self.state == 'ATTACKING':
+                self.whirlwind_activation_time = pygame.time.get_ticks()
                 self.init_state = False
                 self.set_action(Animation_type.Slashing_in_The_Air)
             elif self.state == 'FIRING':
+                self.orbs_activation_time = pygame.time.get_ticks()
                 self.init_state = False
                 self.set_action(Animation_type.Throwing_in_The_Air)
-                self.fire(player.hitbox.center, time)
             elif self.state == 'APPEARING':
                 self.init_state = False
                 self.set_action(Animation_type.Walking)
@@ -141,11 +163,16 @@ class Boss():
             for projectile in self.projectiles:
                 projectile.draw(display, offset_x, offset_y)
 
-    def fire(self, target, time):
+    def fire(self, target):
         self.desired = target - \
             Vector2(self.hitbox.centerx, self.hitbox.centery)
         self.desired.normalize_ip()
-        projectile = Projectile(self.hitbox.center, 1, self.desired, 'boss')
+        if self.desired[0] <= 0:
+            projectile = Projectile(
+                (self.hitbox.x, self.hitbox.centery), 1, self.desired, 'boss')
+        else:
+            projectile = Projectile(
+                (self.hitbox.x + self.hitbox.width, self.hitbox.centery), 1, self.desired, 'boss')
         self.projectiles.append(projectile)
 
     def whirlwind(self, player):
@@ -172,18 +199,33 @@ class Boss():
         if self.rect.x > 800:
             self.rect.x -= 2
 
-    def update_animation(self):
+    def get_summoned_entities(self):
+        return self.new_entities
+
+    def update_animation(self, player, Mob):
         ANIMATION_COOLDOWN = 50
+        # print(f'{self.action} & {self.state} & {self.init_state} & {self.frame_index}')
         # update image depending on current frame
         self.image = self.animation_list[self.action][self.frame_index]
         # check if time passed since last update
         if self.action == int(Animation_type.Kicking) or self.action == int(Animation_type.Hurt):
             ANIMATION_COOLDOWN = 30
 
+        if self.action == int(Animation_type.Throwing_in_The_Air):
+            ANIMATION_COOLDOWN = 20
+
         if pygame.time.get_ticks() - self.update_time > ANIMATION_COOLDOWN:
             self.update_time = pygame.time.get_ticks()
             self.frame_index += 1
         # out of images - resets
+
+        if self.action == int(Animation_type.Slashing_in_The_Air) and self.frame_index == len(self.animation_list[self.action])/2 and self.ready_to_attack:
+            self.whirlwind(player)
+            self.ready_to_attack = False
+        if self.action == int(Animation_type.Throwing_in_The_Air) and self.frame_index == 2 and self.ready_to_fire:
+            self.fire(player.hitbox.center)
+            self.ready_to_fire = False
+
         if self.frame_index >= len(self.animation_list[self.action]):
             if self.action == int(Animation_type.Dying):
                 self.frame_index = len(self.animation_list[self.action]) - 1
@@ -198,6 +240,7 @@ class Boss():
             elif self.action == int(Animation_type.Throwing_in_The_Air):
                 self.state = self.states['IDLING']
                 self.init_state = True
+                self.ready_to_fire = True
             elif self.action == int(Animation_type.Summoning):
                 self.state = self.states['IDLING']
                 self.init_state = True

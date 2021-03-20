@@ -47,6 +47,22 @@ def check_boundaries_for_y(self):
         self.rect.y = BOTTOM_BORDER - self.image_height + self.hitbox_y_offset
 
 
+def get_entity_count(entities, entity_type):
+    entity_count = 0
+    for entity in entities:
+        if entity.type == entity_type:
+            entity_count += 1
+    return entity_count
+
+
+def get_entities(entities, entity_type):
+    new_entities = []
+    for entity in entities:
+        if entity.type == entity_type:
+            new_entities.append(entity)
+    return new_entities
+
+
 def load_animations():
     animation_types = ['Dying', 'Hurt', 'Idle', 'Idle Blinking', 'Kicking', 'Run Slashing', 'Run Throwing',
                        'Running', 'Slashing', 'Slashing in The Air', 'Throwing', 'Throwing in The Air', 'Walking', 'Summoning']
