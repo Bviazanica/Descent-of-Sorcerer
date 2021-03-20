@@ -34,3 +34,4 @@ class Animation_type(IntEnum):
     Throwing = 10,
     Throwing_in_The_Air = 11,
     Walking = 12,
+    Summoning = 13

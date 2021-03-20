@@ -12,19 +12,23 @@ class Player():
     def __init__(self):
         self.type = 'player'
 
+        # id
         self.entity_id = 0
-        self.is_alive = True
 
-        self.flip = False
-        self.animation_list = animation_list[self.entity_id]
-        self.frame_index = 0
+        self.is_alive = True
+        # animations
         self.action = 3
+        self.frame_index = 0
+        self.animation_list = animation_list[self.entity_id]
+
+        # local time
         self.update_time = pygame.time.get_ticks()
 
-        self.image = self.animation_list[self.action][self.frame_index]
         self.rect = self.image.get_rect(width=70, height=80)
 
         # image properties
+        self.flip = False
+        self.image = self.animation_list[self.action][self.frame_index]
         self.image_height = self.image.get_height()
         self.image_width = self.image.get_width()
         # hitbox
@@ -35,9 +39,6 @@ class Player():
             (self.rect.x + self.hitbox_x_offset, self.rect.y + self.hitbox_y_offset, self.rect.width, self.rect.height))
 
         self.rect.center = -100, 100
-
-        self.moving_left = False
-        self.moving_right = True
 
         self.facing_positive = True
         # cooldowns
@@ -142,10 +143,7 @@ class Player():
         #         self.rect.left = col.hitbox.right
         #         collision_types['left'] = True
 
-        if self.rect.x + self.hitbox_x_offset < LEFT_BORDER:
-            self.rect.x = LEFT_BORDER - self.hitbox_x_offset
-        if(self.rect.x + self.rect.width + self.hitbox_x_offset > RIGHT_BORDER):
-            self.rect.x = RIGHT_BORDER - self.rect.width - self.hitbox_x_offset
+        check_boundaries_for_x(self)
         self.hitbox.x = self.rect.x + self.hitbox_x_offset
 
         self.rect.y += movement[1] * time * self.speed
@@ -161,11 +159,7 @@ class Player():
         #         # rect build in method allows us to set rect to side of another rect
         #         self.rect.top = col.hitbox.bottom
         #         collision_types['top'] = True
-
-        if self.rect.y + self.image_height - self.hitbox_y_offset < TOP_BORDER:
-            self.rect.y = TOP_BORDER - self.image_height + self.hitbox_y_offset
-        if self.rect.y + self.image_height - self.hitbox_y_offset > BOTTOM_BORDER:
-            self.rect.y = BOTTOM_BORDER - self.image_height + self.hitbox_y_offset
+        check_boundaries_for_y(self)
         self.hitbox.y = self.rect.y + self.hitbox_y_offset
 
         return self.rect, collision_types

@@ -33,9 +33,23 @@ def summon(object, x, y, number):
     return mobs
 
 
+def check_boundaries_for_x(self):
+    if self.rect.x + self.hitbox_x_offset < LEFT_BORDER:
+        self.rect.x = LEFT_BORDER - self.hitbox_x_offset
+    if(self.rect.x + self.rect.width + self.hitbox_x_offset > RIGHT_BORDER):
+        self.rect.x = RIGHT_BORDER - self.rect.width - self.hitbox_x_offset
+
+
+def check_boundaries_for_y(self):
+    if self.rect.y + self.image_height - self.hitbox_y_offset < TOP_BORDER:
+        self.rect.y = TOP_BORDER - self.image_height + self.hitbox_y_offset
+    if self.rect.y + self.image_height - self.hitbox_y_offset > BOTTOM_BORDER:
+        self.rect.y = BOTTOM_BORDER - self.image_height + self.hitbox_y_offset
+
+
 def load_animations():
     animation_types = ['Dying', 'Hurt', 'Idle', 'Idle Blinking', 'Kicking', 'Run Slashing', 'Run Throwing',
-                       'Running', 'Slashing', 'Slashing in The Air', 'Throwing', 'Throwing in The Air', 'Walking']
+                       'Running', 'Slashing', 'Slashing in The Air', 'Throwing', 'Throwing in The Air', 'Walking', 'Summoning']
     entity_types = ['player', 'boss', 'mob']
 
     list_of_loaded_animations = []

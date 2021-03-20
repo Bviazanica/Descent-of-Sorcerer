@@ -55,7 +55,7 @@ current_time = 0
 attack_with_delay = USEREVENT
 
 pygame.time.set_timer(attack_with_delay, 2000)
-melee_attack_time = range_attack_time = whirlwind_activation_time = -100000
+melee_attack_time = range_attack_time = whirlwind_activation_time = summon_activation_time = fire_activation_time = -100000
 
 # Game Loop
 while running:
@@ -117,16 +117,29 @@ while running:
         if entity.type == 'mob':
             enemies_count += 1
 
-    if enemies_count == 0:
+    if current_time % 1000 and boss.init_state:
+        boss.state = boss.states['FIRING']
+    # cooldowns to attacking classes
+    if enemies_count == 0 and current_time - summon_activation_time > boss.cooldowns['summon']:
+        boss.state = boss.states['SUMMONING']
         mobs = summon(Enemy, 20, 200, 1)
         entities.extend(mobs)
+
+    if is_close(boss.hitbox, player.hitbox, 200) and current_time - whirlwind_activation_time > boss.cooldowns['whirlwind']:
+        whirlwind_activation_time = pygame.time.get_ticks()
+        boss.ready_to_attack = True
+
+    if pygame.event.get(attack_with_delay) and boss.ready_to_attack:
+        boss.state = boss.states['ATTACKING']
+        boss.whirlwind(player)
+        boss.ready_to_attack = False
 
     for entity in entities:
         if entity.type == 'player':
             entity.update(canvas, time_passed_seconds, movement,
                           entities)
         elif entity.type == 'boss':
-            entity.update(canvas, time_passed_seconds, movement,
+            entity.update(canvas, player, time_passed_seconds, movement,
                           entities)
         elif entity.type == 'mob':
             entity.update(time_passed_seconds, player, current_time, mobs)
@@ -136,17 +149,6 @@ while running:
             if random.random() > 0.30:
                 items.append(Potion(50, 'healing_potion',
                                     entity.hitbox.center, 32, 32))
-
-    # if current_time % 100 == 0:
-    #     boss.shoot(player.rect.center, time_passed_seconds)
-
-    if is_close(boss.hitbox, player.hitbox, 200) and current_time - whirlwind_activation_time > boss.cooldowns['whirlwind']:
-        whirlwind_activation_time = pygame.time.get_ticks()
-        boss.ready = False
-
-    if pygame.event.get(attack_with_delay) and not boss.ready:
-        boss.whirlwind(player)
-        boss.ready = True
 
     items_collisions = check_collision(player.hitbox, items)
     for item in items_collisions:

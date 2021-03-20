@@ -11,24 +11,29 @@ class Enemy():
     def __init__(self, x, y):
         self.type = 'mob'
 
+        # id
         self.entity_id = 2
+
         self.is_alive = True
 
+        # flip image based on direction
         self.flip = False
+        # animations
         self.animation_list = animation_list[self.entity_id]
         self.frame_index = 0
         self.action = 3
+        # time for class
         self.update_time = pygame.time.get_ticks()
 
-        self.image = self.animation_list[self.action][self.frame_index]
-        # rect
-        self.rect = self.image.get_rect(width=55, height=70)
-
-        self.rect.x, self.rect.y = (x, y)
-
         # image properties
+        self.image = self.animation_list[self.action][self.frame_index]
         self.image_height = self.image.get_height()
         self.image_width = self.image.get_width()
+
+        # rect
+        self.rect = self.image.get_rect(width=55, height=70)
+        self.rect.x, self.rect.y = (x, y)
+
         # hitbox
         self.hitbox_x_offset = 30
         self.hitbox_y_offset = 15
@@ -38,7 +43,6 @@ class Enemy():
         # hp
         self.max_hp = 200
         self.health_points = 200
-
         self.hp_bar_width = self.rect.w
 
         # speed
@@ -50,7 +54,8 @@ class Enemy():
 
         # how fast the acceleration vector follows desired vec
         self.max_force = 0.08
-        self.approach_radius = 120
+        self.approach_radius = 90
+
         # states
         self.states = {'SEEKING': 'SEEKING', 'HUNTING': 'HUNTING',
                        'FLEE': 'FLEE', 'SACRIFICE': 'SACRIFICE',
@@ -64,12 +69,14 @@ class Enemy():
 
         self.timer = 0
 
+        # vector for desired location
         self.desired = Vector2(0, 0)
 
-        self.vector1 = Vector2(0, 0)
-        self.vector2 = Vector2(0, 0)
-        self.vector3 = Vector2(0, 0)
-        self.vector4 = Vector2(0, 0)
+        # vectors that track position of player corners
+        self.top_left = Vector2(0, 0)
+        self.top_right = Vector2(0, 0)
+        self.bottom_left = Vector2(0, 0)
+        self.bottom_right = Vector2(0, 0)
 
     def update(self, time, player, current_time, mobs):
         self.update_animation()
@@ -104,23 +111,11 @@ class Enemy():
 
             self.rect.center += self.acceleration
 
-            if self.rect.x + self.hitbox_x_offset < LEFT_BORDER:
-                self.rect.x = LEFT_BORDER - self.hitbox_x_offset
-            if(self.rect.x + self.rect.width + self.hitbox_x_offset > RIGHT_BORDER):
-                self.rect.x = RIGHT_BORDER - self.rect.width - self.hitbox_x_offset
+            check_boundaries_for_x(self)
             self.hitbox.x = self.rect.x + self.hitbox_x_offset
 
-            if self.rect.y + self.image_height - self.hitbox_y_offset < TOP_BORDER:
-                self.rect.y = TOP_BORDER - self.image_height + self.hitbox_y_offset
-            if self.rect.y + self.image_height - self.hitbox_y_offset > BOTTOM_BORDER:
-                self.rect.y = BOTTOM_BORDER - self.image_height + self.hitbox_y_offset
+            check_boundaries_for_y(self)
             self.hitbox.y = self.rect.y + self.hitbox_y_offset
-
-            print(
-                f'{self.image.get_height(), self.image.get_width(), self.rect}')
-
-            # print(
-            #     f'{self.rect.y} & {self.rect.height} & {BOTTOM_BORDER, TOP_BORDER, LEFT_BORDER, TOP_BORDER}')
 
         elif self.state == self.states['DYING'] and not self.init_state:
             self.init_state = False
@@ -137,23 +132,23 @@ class Enemy():
                          self.rect.x - offset_x, self.rect.y - offset_y, self.rect.width, self.rect.height], 2)
 
         pygame.draw.rect(display, (255, 0, 0),
-                         (self.hitbox[0] -
-                          offset_x, self.hitbox[1] - 15 - offset_y, self.hp_bar_width, 10))
+                         (self.hitbox.x -
+                          offset_x, self.hitbox.y - 15 - offset_y, self.hp_bar_width, 10))
         pygame.draw.rect(display, (0, 200, 0),
-                         (self.hitbox[0] -
-                          offset_x, self.hitbox[1] - 15 - offset_y, self.hp_bar_width - ((self.hp_bar_width/100)*(self.max_hp - self.health_points)), 10))
+                         (self.hitbox.x -
+                          offset_x, self.hitbox.y - 15 - offset_y, self.hp_bar_width - ((self.hp_bar_width/100)*(self.max_hp - self.health_points)), 10))
 
-        pygame.draw.line(display, RED, self.hitbox.center - Vector2(offset_x,
-                                                                    offset_y), (self.hitbox.center + self.vector3 * 25) - Vector2(offset_x,
-                                                                                                                                  offset_y), 5)
+        # pygame.draw.line(display, RED, self.hitbox.center - Vector2(offset_x,
+        #                                                             offset_y), (self.hitbox.center + self.vector3 * 25) - Vector2(offset_x,
+        #                                                                                                                           offset_y), 5)
 
-        pygame.draw.line(display, GREEN, self.hitbox.center - Vector2(offset_x,
-                                                                      offset_y), (self.hitbox.center + self.vector1 * 25) - Vector2(offset_x,
-                                                                                                                                    offset_y), 5)
+        # pygame.draw.line(display, GREEN, self.hitbox.center - Vector2(offset_x,
+        #                                                               offset_y), (self.hitbox.center + self.vector1 * 25) - Vector2(offset_x,
+        #                                                                                                                             offset_y), 5)
 
-        pygame.draw.line(display, WHITE, self.hitbox.center - Vector2(offset_x,
-                                                                      offset_y), (self.hitbox.center + self.vector2 * 25) - Vector2(offset_x,
-                                                                                                                                    offset_y), 5)
+        # pygame.draw.line(display, WHITE, self.hitbox.center - Vector2(offset_x,
+        #                                                               offset_y), (self.hitbox.center + self.vector2 * 25) - Vector2(offset_x,
+        #                                                                                                                             offset_y), 5)
 
     def hit(self, damage):
         if self.health_points - damage <= 0:
@@ -198,6 +193,18 @@ class Enemy():
             player.hit(self.damage)
             self.timer = pygame.time.get_ticks()
 
+        self.top_left = Vector2(
+            player.hitbox.topleft[0] - self.hitbox.center[0], player.hitbox.topleft[1] - self.hitbox.center[1]).length()
+        self.top_right = Vector2(player.hitbox.topright[0] - self.hitbox.center[0],
+                                 player.hitbox.topright[1] - self.hitbox.center[1]).length()
+        self.bottom_left = Vector2(
+            player.hitbox.bottomleft[0] - self.hitbox.center[0], player.hitbox.bottomleft[1] - self.hitbox.center[1]).length()
+        self.bottom_right = Vector2(
+            player.hitbox.bottomright[0] - self.hitbox.center[0], player.hitbox.bottomright[1] - self.hitbox.center[1]).length()
+
+        # print(
+        #     f'{self.top_left,self.top_right,self.bottom_left,self.bottom_right}')
+
         return self.seek_with_approach(player.rect.center, time, mobs)
 
     def state_flee(self, time, player, current_time, mobs):
@@ -223,7 +230,6 @@ class Enemy():
         # vector from position -> target position
         self.desired = (
             target - Vector2(self.hitbox.centerx, self.hitbox.centery))
-        self.vector1 = self.desired
         dist = self.desired.length()
         if not dist == 0:
             self.desired.normalize_ip()
@@ -260,12 +266,10 @@ class Enemy():
             if mob != self:
                 distance = Vector2(self.hitbox.centerx - mob.hitbox.centerx,
                                    self.hitbox.centery - mob.hitbox.centery)
-                self.vector3 = distance
                 if 0 < distance.length() < 50:
                     self.acceleration += distance.normalize()
                     self.acceleration.scale_to_length(
                         self.desired.length())
-                    self.vector2 = self.acceleration
 
     def update_animation(self):
         ANIMATION_COOLDOWN = 50
