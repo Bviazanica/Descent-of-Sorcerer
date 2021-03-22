@@ -19,7 +19,7 @@ class Enemy():
         # flip image based on direction
         self.flip = False
         # animations
-        self.animation_list = animation_list[self.entity_id]
+        self.animation_list = entities_animation_list[self.entity_id]
         self.frame_index = 0
         self.action = 3
         # time for class
@@ -41,8 +41,8 @@ class Enemy():
         self.hitbox = pygame.Rect(
             (self.rect.x + self.hitbox_x_offset, self.rect.y + self.hitbox_y_offset, self.rect.width, self.rect.height))
         # hp
-        self.max_hp = 200
-        self.health_points = 200
+        self.max_hp = 100
+        self.health_points = 100
         self.hp_bar_width = self.rect.w
 
         # speed
@@ -121,7 +121,6 @@ class Enemy():
             self.hitbox.y = self.rect.y + self.hitbox_y_offset
 
         elif self.state == self.states['DYING'] and not self.init_state:
-            self.init_state = False
             self.set_action(Animation_type.Dying)
 
     def draw(self, display, offset_x, offset_y, player):
@@ -131,15 +130,13 @@ class Enemy():
         pygame.draw.rect(display, (255, 0, 0), [
                          self.hitbox.x - offset_x, self.hitbox.y - offset_y, self.rect.width, self.rect.height], 2)
 
-        pygame.draw.rect(display, (255, 122, 0), [
-                         self.rect.x - offset_x, self.rect.y - offset_y, self.rect.width, self.rect.height], 2)
-
         pygame.draw.rect(display, (255, 0, 0),
                          (self.hitbox.x -
                           offset_x, self.hitbox.y - 15 - offset_y, self.hp_bar_width, 10))
-        pygame.draw.rect(display, (0, 200, 0),
-                         (self.hitbox.x -
-                          offset_x, self.hitbox.y - 15 - offset_y, self.hp_bar_width - ((self.hp_bar_width/100)*(self.max_hp - self.health_points)), 10))
+        if self.is_alive:
+            pygame.draw.rect(display, (0, 200, 0),
+                             (self.hitbox.x -
+                              offset_x, self.hitbox.y - 15 - offset_y, self.hp_bar_width - ((self.hp_bar_width/100)*(self.max_hp - self.health_points)), 10))
 
         # pygame.draw.line(display, RED, self.hitbox.center - Vector2(offset_x,
         #                                                             offset_y), (self.hitbox.center + self.vector3 * 25) - Vector2(offset_x,
@@ -158,7 +155,13 @@ class Enemy():
             self.is_alive = False
             self.state = self.states['DYING']
             self.health_points = 0
-        elif self.is_alive and self.state != self.states['DYING'] and self.state != self.states['HURTING']:
+
+        elif self.is_alive and self.state == self.states['HURTING']:
+            self.frame_index = 0
+            self.init_state = False
+            self.health_points -= damage
+
+        elif self.is_alive and self.state != self.states['DYING']:
             self.last_state = self.state
             self.state = self.states['HURTING']
             self.health_points -= damage
@@ -179,7 +182,6 @@ class Enemy():
         if self.local_time - self.new_destination_time > self.cooldowns['new_destination']:
             self.new_destination_time = pygame.time.get_ticks()
             self.set_destination()
-            print('reaching destination')
 
         return self.seek_with_approach(self.heading.center, time, mobs)
 
@@ -190,7 +192,6 @@ class Enemy():
             self.init_state = False
 
         if is_close(self.hitbox, player.hitbox, 30) and self.local_time - self.attack_time > self.cooldowns['attack']:
-            print("attack :)")
             self.attack_time = pygame.time.get_ticks()
             self.set_action(Animation_type.Kicking)
             self.init_state = False
@@ -278,6 +279,7 @@ class Enemy():
     def update_animation(self):
         ANIMATION_COOLDOWN = 50
         # update image depending on current frame
+
         self.image = self.animation_list[self.action][self.frame_index]
         # check if time passed since last update
         if self.action == int(Animation_type.Kicking) or self.action == int(Animation_type.Hurt):

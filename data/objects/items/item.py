@@ -10,7 +10,7 @@ class Item():
     def __init__(self, name, pos, w, h):
         self.name = name
         item_image = pygame.image.load(
-            'data/images/items/potion.png').convert_alpha()
+            f'data/images/items/{name}.png').convert_alpha()
         self.image = pygame.transform.scale(item_image, (w, h))
 
         self.rect = self.image.get_rect()

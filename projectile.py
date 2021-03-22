@@ -5,44 +5,71 @@ from data.gameobjects.vector2 import Vector2
 
 
 class Projectile(object):
-    def __init__(self, position, direction, desired, projectile_type):
-        self.images = []
-        self.projectile_img = pygame.image.load(
-            'data/images/projectiles/basic.png').convert_alpha()
-        self.projectile_img = pygame.transform.scale(
-            self.projectile_img, (20, 20))
+    def __init__(self, position, direction, desired, projectile_id, damage):
 
-        self.images.append(self.projectile_img)
-        self.image = self.images[0]
-        self.rect = self.image.get_rect()
+        # id
+        self.projectile_id = projectile_id
+        self.animation_list = projectiles_animation_list[self.projectile_id]
+
+        self.frame_index = 0
+        # load image depending on id of projectile
+        if self.projectile_id:
+            self.image = self.animation_list[self.frame_index]
+        else:
+            self.image = self.animation_list[0]
+        self.image_height = self.image.get_height()
+        self.image_width = self.image.get_width()
+
+        self.update_time = pygame.time.get_ticks()
 
         self.position = position
-
+        self.rect = self.image.get_rect()
         self.rect.center = self.position
 
-        self.hitbox = pygame.Rect(self.rect.x, self.rect.y, 20, 20)
+        self.hitbox_x_offset = 30
+        self.hitbox_y_offset = 5
+        self.hitbox = pygame.Rect(
+            self.rect.x + self.hitbox_x_offset, self.rect.y + self.hitbox_y_offset, self.image_width, self.image_height)
 
-        self.damage = 10
-
-        self.type = projectile_type
+        self.damage = damage
 
         self.desired = desired
-        self.speed = 400 * direction
+        self.direction = direction
+        self.speed = 400 * self.direction
+        if projectile_id and self.direction == 1:
+            self.flip = True
+        else:
+            self.flip = False
 
-    def update(self, time):
-        if self.type == 'player':
-            self.damage = 50
-            self.rect.x += (self.speed * time)
-        elif self.type == 'boss':
-            self.damage = 1
-            self.position += self.desired * time * self.speed
-            self.rect.center = self.position
+    def update(self, time, projectiles_list, destroy):
+        if destroy:
+            self.update_animation(projectiles_list, destroy)
+            self.damage = 0
+        else:
+            self.update_animation([], False)
+            if self.projectile_id:
+                self.rect.x += (self.speed * time)
+            else:
+                self.position += self.desired * time * self.speed
+                self.rect.center = self.position
 
-        self.hitbox[0] = self.rect.x
-        self.hitbox[1] = self.rect.y
+            self.hitbox[0] = self.rect.x + self.hitbox_x_offset
+            self.hitbox[1] = self.rect.y + self.hitbox_y_offset
 
     def draw(self, display, offset_x, offset_y):
-        pygame.draw.rect(display, (255, 0, 0), [
-                         self.hitbox[0] - offset_x, self.hitbox[1] - offset_y, 20, 20], 2)
-        display.blit(self.image, (self.rect.x -
-                                  offset_x, self.rect.y-offset_y))
+        pygame.draw.rect(display, RED, [
+                         self.rect.x - offset_x, self.rect.y - offset_y, self.rect.w, self.rect.h], 2)
+        display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
+                                                                           offset_x, self.rect.y - offset_y))
+
+    def update_animation(self, projectiles_list, destroy):
+        ANIMATION_COOLDOWN = 10
+        if self.projectile_id:
+            self.image = self.animation_list[self.frame_index]
+        if pygame.time.get_ticks() - self.update_time > ANIMATION_COOLDOWN:
+            self.update_time = pygame.time.get_ticks()
+            self.frame_index += 1
+        if not destroy and self.frame_index >= 4:
+            self.frame_index = 0
+        elif destroy and self.frame_index >= len(self.animation_list):
+            projectiles_list.pop(projectiles_list.index(self))

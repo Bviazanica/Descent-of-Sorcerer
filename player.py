@@ -19,9 +19,9 @@ class Player():
         # animations
         self.action = 3
         self.frame_index = 0
-        self.animation_list = animation_list[self.entity_id]
+        self.animation_list = entities_animation_list[self.entity_id]
 
-        # local time
+        # local update time for animations
         self.update_time = pygame.time.get_ticks()
 
         # image properties
@@ -29,6 +29,11 @@ class Player():
         self.image = self.animation_list[self.action][self.frame_index]
         self.image_height = self.image.get_height()
         self.image_width = self.image.get_width()
+
+        self.fireball_icon = pygame.image.load(
+            'data/images/icons/new/fireball_icon.png').convert()
+        self.staff_icon = pygame.image.load(
+            'data/images/icons/new/Sword.png').convert()
 
         self.rect = self.image.get_rect(width=70, height=80)
         self.rect.center = -100, 100
@@ -42,7 +47,8 @@ class Player():
         self.facing_positive = True
         # cooldowns
         self.cooldowns = {'melee': 2000, 'range': 2000}
-
+        # player cooldownsdd
+        self.melee_attack_time = self.range_attack_time = -100000
         # attack damage
         self.shoot_damage = 200
         self.melee_damage = 180
@@ -54,9 +60,9 @@ class Player():
         self.projectiles = []
 
         # healthpoints
-        self.health_points = 300000
-        self.max_health = 200
-
+        self.health_points = 200
+        self.max_hp = 200
+        self.hp_bar_width = 400
         self.states = {'IDLING': 'IDLING', 'RUNNING': 'RUNNING',
                        'ATTACKING': 'ATTACKING', 'FIRING': 'FIRING', 'DYING': 'DYING',
                        'HURTING': 'HURTING', 'RUNNING-FIRING': 'RUNNING-FIRING',
@@ -79,15 +85,16 @@ class Player():
                 if len(collision_list):
                     for col in collision_list:
                         col.hit(projectile.damage)
-                    self.projectiles.pop(
-                        self.projectiles.index(projectile))
+                    projectile.update(time, self.projectiles, True)
+                    # self.projectiles.pop(
+                    #     self.projectiles.index(projectile))
 
                 elif projectile.rect.x > RIGHT_BORDER or projectile.rect.x < LEFT_BORDER:
                     self.projectiles.pop(
                         self.projectiles.index(projectile))
 
                 else:
-                    projectile.update(time)
+                    projectile.update(time, [], False)
 
         if self.init_state or self.state == self.states['HURTING']:
             if self.facing_positive:
@@ -171,12 +178,41 @@ class Player():
         pygame.draw.rect(display, (255, 0, 0), [
                          self.hitbox.x - offset_x, self.hitbox.y - offset_y, self.rect.width, self.rect.height], 2)
 
-        pygame.draw.rect(display, (255, 122, 0), [
-                         self.rect.x - offset_x, self.rect.y - offset_y, self.rect.width, self.rect.height], 2)
+        pygame.draw.rect(display, BLACK,
+                         (4, 4, self.hp_bar_width+2, 22))
+
+        pygame.draw.rect(display, RED,
+                         (5, 5, self.hp_bar_width, 20))
+        if self.is_alive:
+            pygame.draw.rect(display, GREEN,
+                             (5, 5, self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points)), 20))
+
+        if get_cooldown_ready(self.range_attack_time, self.cooldowns['range']):
+            pygame.draw.circle(display, GREEN, (25, 50), 20)
+        else:
+            pygame.draw.circle(display, RED, (25, 50), 20)
+
+        if get_cooldown_ready(self.melee_attack_time, self.cooldowns['melee']):
+            pygame.draw.circle(display, GREEN, (70, 50), 20)
+        else:
+            pygame.draw.circle(display, RED, (70, 50), 20)
+        display.blit(self.fireball_icon, (25, 50))
 
     def hit(self, damage):
-        if self.is_alive:
-            self.state = self.states['HURTING']
+        if self.health_points - damage <= 0:
+            self.is_alive = False
+            self.state = self.states['DYING']
+            self.health_points = 0
+        elif self.is_alive and self.state == self.states['HURTING']:
+            self.frame_index = 0
+            self.init_state = False
+            self.health_points -= damage
+        elif self.is_alive and self.state != self.states['DYING']:
+            self.frame_index = 0
+            self.set_action(Animation_type.Hurt)
+            if self.state != self.states['FIRING'] or self.state != self.states['ATTACKING'] or self.state != self.states['RUNNING-FIRING'] or self.state != self.states['RUNNING-ATTACKING']:
+                self.state = self.states['HURTING']
+                self.init_state = False
             self.health_points -= damage
 
     def update_animation(self):
@@ -184,8 +220,10 @@ class Player():
         # update image depending on current frame
         self.image = self.animation_list[self.action][self.frame_index]
         # check if time passed since last update
-        if self.action == int(Animation_type.Slashing) or self.action == int(Animation_type.Throwing_in_The_Air) or self.action == int(Animation_type.Hurt):
+        if self.action == int(Animation_type.Slashing) or self.action == int(Animation_type.Throwing_in_The_Air):
             ANIMATION_COOLDOWN = 30
+        if self.action == int(Animation_type.Hurt):
+            ANIMATION_COOLDOWN = 15
 
         if pygame.time.get_ticks() - self.update_time > ANIMATION_COOLDOWN:
             self.update_time = pygame.time.get_ticks()
@@ -227,25 +265,28 @@ class Player():
             self.update_time = pygame.time.get_ticks()
 
     def melee_attack(self, new_entities):
+        self.melee_attack_time = pygame.time.get_ticks()
         if self.facing_positive:
-            direction = 1
+            attack = pygame.Rect(self.rect.x + ((self.rect.w - self.hitbox_x_offset)), self.rect.y,
+                                 self.rect.width, self.rect.height)
         else:
-            direction = -1
-        attack = pygame.Rect(self.rect.x + ((self.rect.w - self.hitbox_x_offset)*direction), self.rect.y,
-                             self.rect.width, self.rect.height)
+            attack = pygame.Rect(
+                ((self.rect.x + self.hitbox_x_offset - self.rect.w)), self.rect.y, self.rect.width, self.rect.height)
+
         collision_list = check_collision(attack, new_entities)
         for col in collision_list:
             col.hit(self.melee_damage)
 
     def fire(self):
+        self.range_attack_time = pygame.time.get_ticks()
         if self.facing_positive:
             direction = 1
             projectile = Projectile(
-                Vector2(self.hitbox.x + self.hitbox.w, self.hitbox.centery), direction, Vector2(0, 0), 'player')
+                Vector2(self.hitbox.x + self.hitbox.w, self.hitbox.centery), direction, Vector2(0, 0), 1, 25)
         else:
             direction = -1
             projectile = Projectile(
-                Vector2(self.hitbox.x, self.hitbox.centery), direction, Vector2(0, 0), 'player')
+                Vector2(self.hitbox.x, self.hitbox.centery), direction, Vector2(0, 0), 1, 25)
 
         self.projectiles.append(projectile)
 

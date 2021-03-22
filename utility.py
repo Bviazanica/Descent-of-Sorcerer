@@ -63,7 +63,15 @@ def get_entities(entities, entity_type):
     return new_entities
 
 
-def load_animations():
+def get_cooldown_ready(last_used_time, cooldown_time):
+    time = pygame.time.get_ticks()
+    if time - last_used_time > cooldown_time:
+        return True
+    else:
+        return False
+
+
+def load_entity_animations():
     animation_types = ['Dying', 'Hurt', 'Idle', 'Idle Blinking', 'Kicking', 'Run Slashing', 'Run Throwing',
                        'Running', 'Slashing', 'Slashing in The Air', 'Throwing', 'Throwing in The Air', 'Walking', 'Summoning']
     entity_types = ['player', 'boss', 'mob']
@@ -84,12 +92,12 @@ def load_animations():
             # count number of files in the folder
             if os.path.isdir(f'data/images/entities/{entity_type}/{animation}'):
                 num_of_frames = len(os.listdir(
-                    f'data/images/entities/{entity_type}/{animation}'))
+                    f'data/images/entities/{entity_type}/{animation}/new'))
 
                 for i in range(num_of_frames):
                     # print(f'{entity_type} & {animation} - {i}')
                     img = pygame.image.load(
-                        f'data/images/entities/{entity_type}/{animation}/{i}.png')
+                        f'data/images/entities/{entity_type}/{animation}/new/{i}.png')
                     img = pygame.transform.scale(img, (w, h))
                     temp_list.append(img)
 
@@ -102,4 +110,27 @@ def load_animations():
     return list_of_loaded_animations
 
 
-animation_list = load_animations()
+def load_projectile_animations():
+    animation_types = ['rock', 'fireball']
+    projectile_animations = []
+    for animation in animation_types:
+        temp_list = []
+        if os.path.isdir(f'data/images/projectiles/{animation}'):
+            num_of_frames = len(os.listdir(
+                f'data/images/projectiles/{animation}'))
+
+            for i in range(num_of_frames):
+                # print(f'{entity_type} & {animation} - {i}')
+                img = pygame.image.load(
+                    f'data/images/projectiles/{animation}/{i}.png')
+                if animation == 'fireball' and i < 5:
+                    img = pygame.transform.scale(img, (55, 31))
+                else:
+                    img = pygame.transform.scale(img, (30, 43))
+                temp_list.append(img)
+            projectile_animations.append(temp_list)
+    return projectile_animations
+
+
+entities_animation_list = load_entity_animations()
+projectiles_animation_list = load_projectile_animations()

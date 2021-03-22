@@ -12,8 +12,12 @@ class Potion(Item):
         self.points_to_restore = points_to_restore
         super(Potion, self).__init__(name, pos, w, h)
 
-    def heal(self, target):
-        if target.health_points + self.points_to_restore >= target.max_health:
-            target.health_points = target.max_health
-        elif target.health_points + self.points_to_restore < target.max_health:
-            target.health_points += self.points_to_restore
+    def heal(self, target, items):
+        if target.health_points == target.max_hp:
+            return
+        else:
+            if target.health_points + self.points_to_restore >= target.max_hp:
+                target.health_points = target.max_hp
+            elif target.health_points + self.points_to_restore < target.max_hp:
+                target.health_points += self.points_to_restore
+            items.pop(items.index(self))
