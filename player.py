@@ -1,6 +1,7 @@
 import os
 import sys
 import pygame
+import random
 from utility import *
 from pygame.locals import *
 from projectile import Projectile
@@ -31,9 +32,9 @@ class Player():
         self.image_width = self.image.get_width()
 
         self.fireball_icon = pygame.image.load(
-            'data/images/icons/new/fireball_icon.png').convert()
+            'data/images/icons/new/fireball_icon.png').convert_alpha()
         self.staff_icon = pygame.image.load(
-            'data/images/icons/new/Sword.png').convert()
+            'data/images/icons/new/staff.png').convert()
 
         self.rect = self.image.get_rect(width=70, height=80)
         self.rect.center = -100, 100
@@ -85,6 +86,7 @@ class Player():
                 if len(collision_list):
                     for col in collision_list:
                         col.hit(projectile.damage)
+                        fireball_hit_sound.play()
                     projectile.update(time, self.projectiles, True)
                     # self.projectiles.pop(
                     #     self.projectiles.index(projectile))
@@ -196,7 +198,8 @@ class Player():
             pygame.draw.circle(display, GREEN, (70, 50), 20)
         else:
             pygame.draw.circle(display, RED, (70, 50), 20)
-        display.blit(self.fireball_icon, (25, 50))
+        display.blit(self.fireball_icon, (5, 40))
+        display.blit(self.staff_icon, (65, 40))
 
     def hit(self, damage):
         if self.health_points - damage <= 0:
@@ -207,6 +210,7 @@ class Player():
             self.frame_index = 0
             self.init_state = False
             self.health_points -= damage
+            hit_sound.play()
         elif self.is_alive and self.state != self.states['DYING']:
             self.frame_index = 0
             self.set_action(Animation_type.Hurt)
@@ -214,6 +218,7 @@ class Player():
                 self.state = self.states['HURTING']
                 self.init_state = False
             self.health_points -= damage
+            hit_sound.play()
 
     def update_animation(self):
         ANIMATION_COOLDOWN = 50
@@ -265,6 +270,7 @@ class Player():
             self.update_time = pygame.time.get_ticks()
 
     def melee_attack(self, new_entities):
+        swing_sound.play()
         self.melee_attack_time = pygame.time.get_ticks()
         if self.facing_positive:
             attack = pygame.Rect(self.rect.x + ((self.rect.w - self.hitbox_x_offset)), self.rect.y,
@@ -276,8 +282,10 @@ class Player():
         collision_list = check_collision(attack, new_entities)
         for col in collision_list:
             col.hit(self.melee_damage)
+            bonk_sound.play()
 
     def fire(self):
+        random.choice([fireball_cast_sound, fireball_cast2_sound]).play()
         self.range_attack_time = pygame.time.get_ticks()
         if self.facing_positive:
             direction = 1

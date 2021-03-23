@@ -7,6 +7,7 @@ from data import *
 from utility import *
 from boss import Boss
 from enemy import Enemy
+from pygame import mixer
 from player import Player
 from pygame.locals import *
 from data.camera.camera import *
@@ -20,7 +21,13 @@ canvas = pygame.Surface((SCREEN_SIZE[0], SCREEN_SIZE[1]))
 
 # setup
 clock = pygame.time.Clock()
+pygame.mixer.pre_init(44100, 16, 2, 4096)
+mixer.init()
 pygame.init()
+# sounds
+main_background = pygame.mixer.music.load('data/sounds/main_background.wav')
+# menu = pygame.mixer.music.load('data/sounds/menu.wav')
+# death_screen = pygame.mixer.music.load('data/sounds/death_screen.wav')
 
 # Titles
 pygame.display.set_caption("Game")
@@ -52,7 +59,7 @@ camera.setmethod(border)
 
 running = True
 current_time = 0
-
+pygame.mixer.music.play(-1, 0.0)
 # Game Loop
 while running:
     canvas.fill(BLACK)
@@ -67,7 +74,6 @@ while running:
     time_passed_seconds = time_passed / 1000.0
     pressed_keys = pygame.key.get_pressed()
     movement = Vector2(0, 0)
-
     if player.health_points <= 0:
         player.is_alive = False
         player.state = player.states['DYING']
@@ -120,7 +126,7 @@ while running:
                           get_entities(entities, 'mob'))
 
         if not entity.is_alive and entity.type != 'player' and entity.init_state:
-            if random.random() > 0.15:
+            if random.random() > 0.75:
                 items.append(Potion(50, 'potion',
                                     entity.hitbox.center, 32, 32))
             entities.pop(entities.index(entity))

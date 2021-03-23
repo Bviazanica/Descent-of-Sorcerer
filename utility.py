@@ -1,6 +1,7 @@
 import os
 import math
 import pygame
+from pygame import mixer
 from random import randint
 from pygame.locals import *
 from data.globals.globals import *

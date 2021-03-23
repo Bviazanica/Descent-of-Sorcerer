@@ -1,5 +1,23 @@
-
+import pygame
 from enum import IntEnum
+from pygame import mixer
+
+pygame.mixer.pre_init(44100, 16, 2, 4096)
+mixer.init()
+
+boss_battle_sound = pygame.mixer.Sound('data/sounds/boss_battle.wav')
+boss_hurt_sound = pygame.mixer.Sound('data/sounds/boss_hurt.wav')
+fireball_hit_sound = pygame.mixer.Sound('data/sounds/fireball_hit.wav')
+fireball_cast_sound = pygame.mixer.Sound('data/sounds/fireball_cast.wav')
+fireball_cast2_sound = pygame.mixer.Sound('data/sounds/fireball_cast2.wav')
+hit_sound = pygame.mixer.Sound('data/sounds/hit.wav')
+menu_select_sound = pygame.mixer.Sound('data/sounds/menu_select.wav')
+mob_death_sound = pygame.mixer.Sound('data/sounds/mob_death.wav')
+potion_sound = pygame.mixer.Sound('data/sounds/potion.wav')
+swing_sound = pygame.mixer.Sound('data/sounds/swing.wav')
+throw_sound = pygame.mixer.Sound('data/sounds/throw.wav')
+bonk_sound = pygame.mixer.Sound('data/sounds/bonk.wav')
+wave_complete_sound = pygame.mixer.Sound('data/sounds/wave_complete.wav')
 
 FPS = 60  # frame rate
 SCREEN_SIZE = width, height = 800, 600

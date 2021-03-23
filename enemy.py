@@ -155,7 +155,7 @@ class Enemy():
             self.is_alive = False
             self.state = self.states['DYING']
             self.health_points = 0
-
+            mob_death_sound.play()
         elif self.is_alive and self.state == self.states['HURTING']:
             self.frame_index = 0
             self.init_state = False

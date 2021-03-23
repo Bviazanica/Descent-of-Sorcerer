@@ -16,6 +16,7 @@ class Potion(Item):
         if target.health_points == target.max_hp:
             return
         else:
+            potion_sound.play()
             if target.health_points + self.points_to_restore >= target.max_hp:
                 target.health_points = target.max_hp
             elif target.health_points + self.points_to_restore < target.max_hp:

@@ -161,6 +161,7 @@ class Boss():
                 projectile.draw(display, offset_x, offset_y)
 
     def fire(self, target):
+        throw_sound.play()
         self.desired = target - \
             Vector2(self.hitbox.centerx, self.hitbox.centery)
         self.desired.normalize_ip()
@@ -188,18 +189,16 @@ class Boss():
             self.set_action(Animation_type.Dying)
             self.init_state = False
             self.health_points = 0
-            print(f'dying damage {damage}')
+            boss_hurt_sound.play()
         elif self.is_alive and self.state == self.states['HURTING']:
             self.init_state = True
             self.frame_index = 0
             self.init_state = False
             self.health_points -= damage
-            print(f'HURTING damage {damage}')
         elif self.is_alive and self.state != self.states['DYING']:
             self.init_state = True
             self.state = self.states['HURTING']
             self.health_points -= damage
-            print(f'not dying damage {damage}')
 
     def appear(self):
         if self.rect.x > 800:
@@ -210,7 +209,6 @@ class Boss():
 
     def update_animation(self, player, Mob):
         ANIMATION_COOLDOWN = 50
-        print(f'{self.action} {self.state} {self.frame_index}')
         # update image depending on current frame
         self.image = self.animation_list[self.action][self.frame_index]
         # check if time passed since last update
