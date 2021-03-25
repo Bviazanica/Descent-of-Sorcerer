@@ -10,7 +10,7 @@ from data.gameobjects.vector2 import Vector2
 
 
 class Player():
-    def __init__(self):
+    def __init__(self, x, y):
         self.type = 'player'
 
         # id
@@ -23,8 +23,9 @@ class Player():
         self.animation_list = entities_animation_list[self.entity_id]
 
         # local update time for animations
-        self.update_time = pygame.time.get_ticks()
+        self.update_time = 0
 
+        self.animation_time = 0
         # image properties
         self.flip = False
         self.image = self.animation_list[self.action][self.frame_index]
@@ -37,7 +38,7 @@ class Player():
             'data/images/icons/new/staff.png').convert()
 
         self.rect = self.image.get_rect(width=70, height=80)
-        self.rect.center = -100, 100
+        self.rect.center = x, y
         # hitbox
         self.hitbox_x_offset = 25
         self.hitbox_y_offset = 20
@@ -71,12 +72,13 @@ class Player():
         self.state = self.states['IDLING']
 
         self.init_state = True
-
+        self.death_screen_ready = False
         self.ready_to_fire = True
 
     # update position
 
-    def update(self, time, movement, entities):
+    def update(self, time_passed, time, movement, entities):
+        self.update_time = time_passed
         new_entities = new_list_without_self(self, entities)
         self.update_animation()
         if self.projectiles:
@@ -87,7 +89,8 @@ class Player():
                     for col in collision_list:
                         col.hit(projectile.damage)
                         fireball_hit_sound.play()
-                    projectile.update(time, self.projectiles, True)
+                    projectile.update(self.update_time, time,
+                                      self.projectiles, True)
                     # self.projectiles.pop(
                     #     self.projectiles.index(projectile))
 
@@ -96,7 +99,7 @@ class Player():
                         self.projectiles.index(projectile))
 
                 else:
-                    projectile.update(time, [], False)
+                    projectile.update(self.update_time, time, [], False)
 
         if self.init_state or self.state == self.states['HURTING']:
             if self.facing_positive:
@@ -128,6 +131,9 @@ class Player():
 
         self.rect, collisions = self.move(
             self.rect, movement, new_entities, time)
+
+        # print(
+        #     f'STATE {self.state}, ACTION {self.action}, HP {self.health_points}')
 
     def move(self, rect, movement, new_entities, time):
         collision_types = {'top': False, 'bottom': False,
@@ -189,12 +195,12 @@ class Player():
             pygame.draw.rect(display, GREEN,
                              (5, 5, self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points)), 20))
 
-        if get_cooldown_ready(self.range_attack_time, self.cooldowns['range']):
+        if get_cooldown_ready(self.range_attack_time, self.cooldowns['range'],  self.update_time):
             pygame.draw.circle(display, GREEN, (25, 50), 20)
         else:
             pygame.draw.circle(display, RED, (25, 50), 20)
 
-        if get_cooldown_ready(self.melee_attack_time, self.cooldowns['melee']):
+        if get_cooldown_ready(self.melee_attack_time, self.cooldowns['melee'], self.update_time):
             pygame.draw.circle(display, GREEN, (70, 50), 20)
         else:
             pygame.draw.circle(display, RED, (70, 50), 20)
@@ -230,8 +236,8 @@ class Player():
         if self.action == int(Animation_type.Hurt):
             ANIMATION_COOLDOWN = 15
 
-        if pygame.time.get_ticks() - self.update_time > ANIMATION_COOLDOWN:
-            self.update_time = pygame.time.get_ticks()
+        if self.update_time - self.animation_time > ANIMATION_COOLDOWN:
+            self.animation_time = self.update_time
             self.frame_index += 1
 
         if (self.action == int(Animation_type.Throwing_in_The_Air) or self.action == int(Animation_type.Throwing_in_The_Air)) and self.frame_index == 2 and self.ready_to_fire:
@@ -241,6 +247,7 @@ class Player():
         if self.frame_index >= len(self.animation_list[self.action]):
             if self.action == int(Animation_type.Dying):
                 self.frame_index = len(self.animation_list[self.action]) - 1
+                self.death_screen_ready = True
             elif self.action == int(Animation_type.Slashing):
                 self.init_state = True
                 self.state = self.states['IDLING']
@@ -267,11 +274,11 @@ class Player():
             self.action = new_action
             # update animation from start
             self.frame_index = 0
-            self.update_time = pygame.time.get_ticks()
+            self.animation_time = self.update_time
 
     def melee_attack(self, new_entities):
         swing_sound.play()
-        self.melee_attack_time = pygame.time.get_ticks()
+        self.melee_attack_time = self.update_time
         if self.facing_positive:
             attack = pygame.Rect(self.rect.x + ((self.rect.w - self.hitbox_x_offset)), self.rect.y,
                                  self.rect.width, self.rect.height)
@@ -286,7 +293,7 @@ class Player():
 
     def fire(self):
         random.choice([fireball_cast_sound, fireball_cast2_sound]).play()
-        self.range_attack_time = pygame.time.get_ticks()
+        self.range_attack_time = self.update_time
         if self.facing_positive:
             direction = 1
             projectile = Projectile(

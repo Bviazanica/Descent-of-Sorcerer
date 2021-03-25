@@ -64,12 +64,19 @@ def get_entities(entities, entity_type):
     return new_entities
 
 
-def get_cooldown_ready(last_used_time, cooldown_time):
-    time = pygame.time.get_ticks()
+def get_cooldown_ready(last_used_time, cooldown_time, time_passed):
+    time = time_passed
     if time - last_used_time > cooldown_time:
         return True
     else:
         return False
+
+
+def draw_text(text, font, color, surface, x, y):
+    textobj = font.render(text, 1, color)
+    textrect = textobj.get_rect()
+    textrect.midtop = (x, y)
+    surface.blit(textobj, textrect)
 
 
 def load_entity_animations():

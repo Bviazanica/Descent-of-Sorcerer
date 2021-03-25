@@ -22,14 +22,13 @@ wave_complete_sound = pygame.mixer.Sound('data/sounds/wave_complete.wav')
 FPS = 60  # frame rate
 SCREEN_SIZE = width, height = 800, 600
 # colors
-BLACK = (0, 0, 0)
+BLACK = 0, 0, 0
 WHITE = (255, 255, 255)
 RED = (240, 0, 0)
 GREEN = (0, 200, 0)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
 DARKGRAY = (40, 40, 40)
-
 
 CAMERA_TOP, CAMERA_BOTTOM = -260, 460
 CAMERA_LEFT, CAMERA_RIGHT = -365, 915

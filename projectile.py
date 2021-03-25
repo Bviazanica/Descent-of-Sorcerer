@@ -20,7 +20,8 @@ class Projectile(object):
         self.image_height = self.image.get_height()
         self.image_width = self.image.get_width()
 
-        self.update_time = pygame.time.get_ticks()
+        self.update_time = 0
+        self.animation_time = 0
 
         self.position = position
         self.rect = self.image.get_rect()
@@ -41,7 +42,8 @@ class Projectile(object):
         else:
             self.flip = False
 
-    def update(self, time, projectiles_list, destroy):
+    def update(self, time_passed, time, projectiles_list, destroy):
+        self.update_time = time_passed
         if destroy:
             self.update_animation(projectiles_list, destroy)
             self.damage = 0
@@ -66,8 +68,8 @@ class Projectile(object):
         ANIMATION_COOLDOWN = 10
         if self.projectile_id:
             self.image = self.animation_list[self.frame_index]
-        if pygame.time.get_ticks() - self.update_time > ANIMATION_COOLDOWN:
-            self.update_time = pygame.time.get_ticks()
+        if self.update_time - self.animation_time > ANIMATION_COOLDOWN:
+            self.animation_time = self.update_time
             self.frame_index += 1
         if not destroy and self.frame_index >= 4:
             self.frame_index = 0

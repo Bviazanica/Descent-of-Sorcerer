@@ -22,8 +22,6 @@ class Boss():
 
         # id for animations
         self.entity_id = 1
-        # time since class is iniciated
-        self.update_time = pygame.time.get_ticks()
 
         # flip image based on direction
         self.flip = False
@@ -45,9 +43,6 @@ class Boss():
 
         # cooldown on abilities
         self.cooldowns = {'summon': 5000, 'whirlwind': 10000, 'orbs': 2000}
-        self.attack_with_delay = USEREVENT
-        pygame.time.set_timer(self.attack_with_delay, 2000)
-
         self.whirlwind_activation_time = self.orbs_activation_time = self.summon_activation_time = -10000
         # speed
         self.speed = 200
@@ -57,6 +52,9 @@ class Boss():
 
         self.hp_bar_width = self.rect.w
 
+        self.update_time = 0
+        self.animation_time = 0
+        self.timeout = 0
         self.projectiles = []
 
         # desired location vector
@@ -74,20 +72,25 @@ class Boss():
         self.ready_to_fire = True
         self.entities_summoned = False
 
-    def update(self, player, time, movement, entities, Mob):
+    def update(self, player, time_passed, time, movement, entities, Mob):
+        self.update_time = time_passed
         new_entities = new_list_without_self(self, entities)
         self.desired = (
             player.hitbox.center - Vector2(self.hitbox.centerx, self.hitbox.centery))
         self.update_animation(player, Mob)
+        # print(f'{self.state} & {self.init_state - self.whirlwind_activation_time} & {pygame.event.get(self.attack_with_delay)}')
         if self.is_alive:
             if self.desired[0] <= 0:
                 self.flip = True
             else:
                 self.flip = False
             if self.init_state and self.state != self.states['DYING']:
-                if is_close(self.hitbox, player.hitbox, 200) and self.update_time - self.whirlwind_activation_time > self.cooldowns['whirlwind']:
+                if is_close(self.hitbox, player.hitbox, 200) and self.update_time - self.whirlwind_activation_time > self.cooldowns['whirlwind'] and not self.ready_to_attack:
                     self.ready_to_attack = True
-                if pygame.event.get(self.attack_with_delay) and self.ready_to_attack:
+                    self.timeout = self.update_time
+                if self.timeout != 0 and self.update_time - self.timeout > 2000 and self.ready_to_attack:
+
+                    self.timeout = 0
                     self.state = self.states['ATTACKING']
             if not self.ready_to_attack and self.init_state:
                 if get_entity_count(new_entities, 'mob') == 0 and self.update_time - self.summon_activation_time > self.cooldowns['summon']:
@@ -103,19 +106,21 @@ class Boss():
                     self.init_state = False
                     self.set_action(Animation_type.Hurt)
                 elif self.state == 'SUMMONING':
-                    self.summon_activation_time = pygame.time.get_ticks()
+                    self.summon_activation_time = self.update_time
                     self.init_state = False
                     self.set_action(Animation_type.Summoning)
                     self.new_entities = summon(Mob, 350, 200, 3)
                     self.entities_summoned = True
                 elif self.state == 'ATTACKING':
-                    self.whirlwind_activation_time = pygame.time.get_ticks()
+                    self.whirlwind_activation_time = self.update_time
                     self.init_state = False
-                    self.set_action(Animation_type.Slashing_in_The_Air)
+                    self.set_action(
+                        Animation_type.Slashing_in_The_Air)
                 elif self.state == 'FIRING':
-                    self.orbs_activation_time = pygame.time.get_ticks()
+                    self.orbs_activation_time = self.update_time
                     self.init_state = False
-                    self.set_action(Animation_type.Throwing_in_The_Air)
+                    self.set_action(
+                        Animation_type.Throwing_in_The_Air)
                 elif self.state == 'APPEARING':
                     self.init_state = False
                     self.set_action(Animation_type.Walking)
@@ -140,7 +145,7 @@ class Boss():
                     self.projectiles.pop(self.projectiles.index(projectile))
 
                 else:
-                    projectile.update(time, [], False)
+                    projectile.update(self.update_time, time, [], False)
 
     def draw(self, display, offset_x, offset_y, player):
         display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
@@ -218,8 +223,8 @@ class Boss():
         if self.action == int(Animation_type.Throwing_in_The_Air):
             ANIMATION_COOLDOWN = 20
 
-        if pygame.time.get_ticks() - self.update_time > ANIMATION_COOLDOWN:
-            self.update_time = pygame.time.get_ticks()
+        if self.update_time - self.animation_time > ANIMATION_COOLDOWN:
+            self.animation_time = self.update_time
             self.frame_index += 1
         # out of images - resets
 
@@ -256,4 +261,4 @@ class Boss():
             self.action = new_action
             # update animation from start
             self.frame_index = 0
-            self.update_time = pygame.time.get_ticks()
+            self.animation_time = self.update_time

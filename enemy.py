@@ -22,8 +22,9 @@ class Enemy():
         self.animation_list = entities_animation_list[self.entity_id]
         self.frame_index = 0
         self.action = 3
-        # time for class
-        self.update_time = pygame.time.get_ticks()
+
+        # time for animation update
+        self.update_time = 0
 
         # image properties
         self.image = self.animation_list[self.action][self.frame_index]
@@ -80,8 +81,8 @@ class Enemy():
         self.bottom_right = Vector2(0, 0)
         self.vector2 = Vector2(0, 0)
 
-    def update(self, tick, player, mobs):
-        self.local_time = pygame.time.get_ticks()
+    def update(self, time_passed, tick, player, mobs):
+        self.local_time = time_passed
         self.update_animation()
         if self.is_alive:
             if self.desired[0] <= 0:
@@ -180,7 +181,7 @@ class Enemy():
             self.state = self.states['HUNTING']
 
         if self.local_time - self.new_destination_time > self.cooldowns['new_destination']:
-            self.new_destination_time = pygame.time.get_ticks()
+            self.new_destination_time = self.local_time
             self.set_destination()
 
         return self.seek_with_approach(self.heading.center, time, mobs)
@@ -192,7 +193,7 @@ class Enemy():
             self.init_state = False
 
         if is_close(self.hitbox, player.hitbox, 30) and self.local_time - self.attack_time > self.cooldowns['attack']:
-            self.attack_time = pygame.time.get_ticks()
+            self.attack_time = self.local_time
             self.set_action(Animation_type.Kicking)
             self.init_state = False
             player.hit(self.damage)
@@ -218,11 +219,6 @@ class Enemy():
             self.init_state = False
 
         return self.flee(player.hitbox, tick, mobs)
-
-    def state_sacrifice(self):
-        if self.init_state:
-            self.speed = 200
-        pass
 
     def set_destination(self):
         self.heading = pygame.Rect(
@@ -275,6 +271,8 @@ class Enemy():
                     self.acceleration.scale_to_length(
                         self.desired.length())
                     self.vector2 = self.acceleration
+                elif distance.length() == 0:
+                    self.acceleration += Vector2(0, 0)
 
     def update_animation(self):
         ANIMATION_COOLDOWN = 50
@@ -285,8 +283,8 @@ class Enemy():
         if self.action == int(Animation_type.Kicking) or self.action == int(Animation_type.Hurt):
             ANIMATION_COOLDOWN = 30
 
-        if pygame.time.get_ticks() - self.update_time > ANIMATION_COOLDOWN:
-            self.update_time = pygame.time.get_ticks()
+        if self.local_time - self.update_time > ANIMATION_COOLDOWN:
+            self.update_time = self.local_time
             self.frame_index += 1
         # out of images - resets
         if self.frame_index >= len(self.animation_list[self.action]):
@@ -312,4 +310,4 @@ class Enemy():
             self.action = new_action
             # update animation from start
             self.frame_index = 0
-            self.update_time = pygame.time.get_ticks()
+            self.update_time = self.local_time
