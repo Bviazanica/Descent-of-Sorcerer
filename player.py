@@ -62,7 +62,7 @@ class Player():
         self.projectiles = []
 
         # healthpoints
-        self.health_points = 200
+        self.health_points = 1
         self.max_hp = 200
         self.hp_bar_width = 400
         self.states = {'IDLING': 'IDLING', 'RUNNING': 'RUNNING',
@@ -77,7 +77,7 @@ class Player():
 
     # update position
 
-    def update(self, time_passed, time, movement, entities):
+    def update(self, time_passed, time, movement, entities, stage):
         self.update_time = time_passed
         new_entities = new_list_without_self(self, entities)
         self.update_animation()

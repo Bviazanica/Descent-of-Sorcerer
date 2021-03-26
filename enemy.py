@@ -64,9 +64,9 @@ class Enemy():
         self.states = {'SEEKING': 'SEEKING', 'HUNTING': 'HUNTING',
                        'FLEE': 'FLEE', 'SACRIFICE': 'SACRIFICE',
                        'HURTING': 'HURTING', 'DYING': 'DYING',
-                       'ATTACKING': 'ATTACKING', 'IDLING': 'IDLING'}
+                       'ATTACKING': 'ATTACKING', 'IDLING': 'IDLING', 'APPEARING': 'APPEARING'}
 
-        self.state = self.states['SEEKING']
+        self.state = self.states['APPEARING']
 
         self.last_state = ''
         self.init_state = True
@@ -80,46 +80,64 @@ class Enemy():
         self.bottom_left = Vector2(0, 0)
         self.bottom_right = Vector2(0, 0)
         self.vector2 = Vector2(0, 0)
+        self.vector = Vector2(0, 0)
 
-    def update(self, time_passed, tick, player, mobs):
+    def update(self, time_passed, tick, player, mobs, stage):
         self.local_time = time_passed
         self.update_animation()
         if self.is_alive:
-            if self.desired[0] <= 0:
+            if self.desired.x <= 0:
                 self.flip = True
             else:
                 self.flip = False
 
-            if self.state == 'SEEKING':
-                self.acceleration += self.state_seeking(
-                    tick, player, mobs)
-            elif self.state == 'HUNTING':
-                self.acceleration += self.state_hunting(
-                    tick, player, mobs)
-            elif self.state == 'FLEE':
-                self.acceleration += self.state_flee(tick,
-                                                     player, mobs)
-            elif self.state == 'SACRIFICE':
-                self.acceleration += self.state_sacrifice(
-                    tick, player)
-            if self.init_state:
-                if self.state == 'HURTING':
-                    self.init_state = False
-                    self.set_action(Animation_type.Hurt)
-                elif self.state == 'IDLING':
-                    self.set_action(Animation_type.Idle_Blinking)
-                elif self.state == 'ATTACKING':
-                    self.init_state = False
-                    self.set_action(Animation_type.Kicking)
+            if self.state == 'APPEARING':
+                self.go_to = Vector2(
+                    self.desired.x - self.rect.centerx, self.desired.y - self.rect.centery)
+                self.set_action(Animation_type.Running)
+                if self.go_to.x <= 0:
+                    self.flip = True
+                else:
+                    self.flip = False
+                if abs(self.go_to.x) > 5:
+                    self.go_to.normalize_ip()
+                    self.rect.centerx += self.go_to.x * self.speed * tick
+                    self.hitbox.x = self.rect.x + self.hitbox_x_offset
+                    self.hitbox.y = self.rect.y + self.hitbox_y_offset
+                else:
+                    self.state = self.states['SEEKING']
+                    self.set_action(Animation_type.Walking)
+            else:
+                if self.state == 'SEEKING':
+                    self.acceleration += self.state_seeking(
+                        tick, player, mobs)
+                elif self.state == 'HUNTING':
+                    self.acceleration += self.state_hunting(
+                        tick, player, mobs)
+                elif self.state == 'FLEE':
+                    self.acceleration += self.state_flee(tick,
+                                                         player, mobs)
+                elif self.state == 'SACRIFICE':
+                    self.acceleration += self.state_sacrifice(
+                        tick, player)
+                if self.init_state:
+                    if self.state == 'HURTING':
+                        self.init_state = False
+                        self.set_action(Animation_type.Hurt)
+                    elif self.state == 'IDLING':
+                        self.set_action(Animation_type.Idle_Blinking)
+                    elif self.state == 'ATTACKING':
+                        self.init_state = False
+                        self.set_action(Animation_type.Kicking)
 
-            self.avoid_mobs(mobs)
-            self.rect.center += self.acceleration
+                self.avoid_mobs(mobs)
+                self.rect.center += self.acceleration
 
-            check_boundaries_for_x(self)
-            self.hitbox.x = self.rect.x + self.hitbox_x_offset
+                check_boundaries_for_x(self)
+                self.hitbox.x = self.rect.x + self.hitbox_x_offset
 
-            check_boundaries_for_y(self)
-            self.hitbox.y = self.rect.y + self.hitbox_y_offset
+                check_boundaries_for_y(self)
+                self.hitbox.y = self.rect.y + self.hitbox_y_offset
 
         elif self.state == self.states['DYING'] and not self.init_state:
             self.set_action(Animation_type.Dying)

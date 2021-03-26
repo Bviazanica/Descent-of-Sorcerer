@@ -10,10 +10,14 @@ from data.globals.globals import *
 
 
 class Button():
-    def __init__(self, x, y):
-        self.image = pygame.image.load(
-            'data/images/button/new/button.png').convert_alpha()
-        self.image = pygame.transform.scale(self.image, (200, 100))
+    def __init__(self, x, y, type):
+        if type == 'menu':
+            self.image = pygame.image.load(
+                'data/images/button/new/button.png').convert_alpha()
+            self.image = pygame.transform.scale(self.image, (200, 100))
+        else:
+            self.image = pygame.image.load(
+                'data/images/button/new/arrow.png').convert_alpha()
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
         self.clicked = False

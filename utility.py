@@ -5,6 +5,7 @@ from pygame import mixer
 from random import randint
 from pygame.locals import *
 from data.globals.globals import *
+Vector2 = pygame.math.Vector2
 
 
 def check_collision(rect, obj_list):
@@ -25,10 +26,11 @@ def is_close(object1, object2, distance):
     return math.hypot(object2.centerx-object1.centerx, object2.centery-object1.centery) < float(distance)
 
 
-def summon(object, x, y, number):
+def summon(object, x, y, number, wave_number, x_offset):
     mobs = []
     for mob in range(number):
         mob = object(x, y)
+        mob.desired = Vector2(x - x_offset, y)
         mobs.append(mob)
         y += 125
     return mobs
@@ -62,6 +64,11 @@ def get_entities(entities, entity_type):
         if entity.type == entity_type:
             new_entities.append(entity)
     return new_entities
+
+
+def load_music(music_name):
+    music = pygame.mixer.music.load(f'data/sounds/{music_name}.wav')
+    return music
 
 
 def get_cooldown_ready(last_used_time, cooldown_time, time_passed):

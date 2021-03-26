@@ -52,3 +52,10 @@ class Animation_type(IntEnum):
     Throwing_in_The_Air = 11,
     Walking = 12,
     Summoning = 13
+
+
+class Tutorial_stage(IntEnum):
+    movement = 0,
+    attacks = 1,
+    game = 2,
+    pause = 3,
