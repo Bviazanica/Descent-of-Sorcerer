@@ -26,10 +26,10 @@ def is_close(object1, object2, distance):
     return math.hypot(object2.centerx-object1.centerx, object2.centery-object1.centery) < float(distance)
 
 
-def summon(object, x, y, number, wave_number, x_offset):
+def summon(object, x, y, number, wave_number, x_offset, spawned):
     mobs = []
     for mob in range(number):
-        mob = object(x, y)
+        mob = object(x, y, spawned)
         mob.desired = Vector2(x - x_offset, y)
         mobs.append(mob)
         y += 125
@@ -88,7 +88,7 @@ def draw_text(text, font, color, surface, x, y):
 
 def load_entity_animations():
     animation_types = ['Dying', 'Hurt', 'Idle', 'Idle Blinking', 'Kicking', 'Run Slashing', 'Run Throwing',
-                       'Running', 'Slashing', 'Slashing in The Air', 'Throwing', 'Throwing in The Air', 'Walking', 'Summoning']
+                       'Running', 'Slashing', 'Slashing in The Air', 'Throwing', 'Throwing in The Air', 'Walking', 'Summoning', 'Falling']
     entity_types = ['player', 'boss', 'mob']
 
     list_of_loaded_animations = []

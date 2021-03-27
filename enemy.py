@@ -8,7 +8,7 @@ Vector2 = pygame.math.Vector2
 
 
 class Enemy():
-    def __init__(self, x, y):
+    def __init__(self, x, y, spawned):
         self.type = 'mob'
 
         # id
@@ -66,7 +66,10 @@ class Enemy():
                        'HURTING': 'HURTING', 'DYING': 'DYING',
                        'ATTACKING': 'ATTACKING', 'IDLING': 'IDLING', 'APPEARING': 'APPEARING'}
 
-        self.state = self.states['APPEARING']
+        if spawned:
+            self.state = self.states['APPEARING']
+        else:
+            self.state = self.states['SEEKING']
 
         self.last_state = ''
         self.init_state = True
@@ -92,6 +95,7 @@ class Enemy():
                 self.flip = False
 
             if self.state == 'APPEARING':
+                self.speed = 50
                 self.go_to = Vector2(
                     self.desired.x - self.rect.centerx, self.desired.y - self.rect.centery)
                 self.set_action(Animation_type.Running)

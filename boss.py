@@ -89,20 +89,20 @@ class Boss():
             if self.state == 'APPEARING':
                 self.go_to = Vector2(
                     self.desired_appear.x - self.rect.centerx, self.desired_appear.y - self.rect.centery)
-                self.set_action(Animation_type.Running)
+                self.set_action(Animation_type.Falling)
                 if self.go_to.x <= 0:
                     self.flip = True
                 else:
                     self.flip = False
-                print(f'{self.go_to.x} & {self.desired_appear}')
-                if abs(self.go_to.x) > 5:
+                if abs(self.go_to.y) > 5:
                     self.go_to.normalize_ip()
-                    self.rect.centerx += self.go_to.x * self.speed * tick
+                    self.rect.centery += self.go_to.y * self.speed * tick
                     self.hitbox.x = self.rect.x + self.hitbox_x_offset
                     self.hitbox.y = self.rect.y + self.hitbox_y_offset
                 else:
                     self.state = self.states['IDLING']
                     self.set_action(Animation_type.Walking)
+                    self.init_state = True
             else:
                 if self.init_state and self.state != self.states['DYING']:
                     if is_close(self.hitbox, player.hitbox, 200) and self.update_time - self.whirlwind_activation_time > self.cooldowns['whirlwind'] and not self.ready_to_attack:
@@ -155,7 +155,6 @@ class Boss():
                 if len(collision_list):
                     for col in collision_list:
                         col.hit(projectile.damage)
-                    # projectile.update(time, self.projectiles, True)
                     self.projectiles.pop(self.projectiles.index(projectile))
 
                 elif projectile.rect.x > RIGHT_BORDER or projectile.rect.x < LEFT_BORDER or projectile.rect.y < CAMERA_TOP or projectile.rect.y > CAMERA_BOTTOM:
@@ -264,7 +263,7 @@ class Boss():
             elif self.action == int(Animation_type.Summoning):
                 self.new_entities = summon(
                     Mob, self.hitbox.centerx + random.choice(
-                        [randint(-100, -50), randint(50, 100)]), 50, 3, wave_number, 0)
+                        [randint(-200, -50), randint(130, 200)]), 50, 3, wave_number, 0, False)
                 self.entities_summoned = True
                 self.state = self.states['IDLING']
                 self.init_state = True

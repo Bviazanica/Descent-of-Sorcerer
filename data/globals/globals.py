@@ -19,6 +19,21 @@ throw_sound = pygame.mixer.Sound('data/sounds/throw.wav')
 bonk_sound = pygame.mixer.Sound('data/sounds/bonk.wav')
 wave_complete_sound = pygame.mixer.Sound('data/sounds/wave_complete.wav')
 
+sound_effects = []
+sound_effects.extend([boss_battle_sound,
+                      boss_hurt_sound,
+                      fireball_hit_sound,
+                      fireball_cast_sound,
+                      fireball_cast2_sound,
+                      hit_sound,
+                      menu_select_sound,
+                      mob_death_sound,
+                      potion_sound,
+                      swing_sound,
+                      throw_sound,
+                      bonk_sound,
+                      wave_complete_sound])
+
 FPS = 60  # frame rate
 SCREEN_SIZE = width, height = 800, 600
 # colors
@@ -51,7 +66,8 @@ class Animation_type(IntEnum):
     Throwing = 10,
     Throwing_in_The_Air = 11,
     Walking = 12,
-    Summoning = 13
+    Summoning = 13,
+    Falling = 14,
 
 
 class Tutorial_stage(IntEnum):

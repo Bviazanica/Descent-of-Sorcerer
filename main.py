@@ -11,6 +11,7 @@ from enemy import Enemy
 from pygame import mixer
 from player import Player
 from pygame.locals import *
+from toggle_music import Pause
 from data.camera.camera import *
 from data.globals.globals import *
 from data.gameobjects.vector2 import Vector2
@@ -42,16 +43,6 @@ dim_screen.fill((0, 0, 0, 180))
 tutorial_text = pygame.Surface((window.get_width(), 100)).convert_alpha()
 tutorial_text.fill((0, 0, 0, 180))
 
-# death screen menu
-restart_button = Button(SCREEN_SIZE[0]//2, 300, 'menu')
-menu_button = Button(SCREEN_SIZE[0]//2, 400, 'menu')
-# menu
-game_button = Button(SCREEN_SIZE[0]//2, 100, 'menu')
-controls_button = Button(SCREEN_SIZE[0]//2, 200, 'menu')
-credits_button = Button(SCREEN_SIZE[0]//2, 300, 'menu')
-quit_button = Button(SCREEN_SIZE[0]//2, 400, 'menu')
-# tutorial
-next_button = Button(SCREEN_SIZE[0] - 25, SCREEN_SIZE[1] - 25, 'arrow')
 
 # font
 font_name = pygame.font.match_font('arial')
@@ -69,24 +60,24 @@ tutorial_stages = ['movement', 'attacks', 'game', 'pause']
 
 tutorial = True
 paused = False
-
+clickable = True
 stage_loading_time = 5000
 wave_number = 0
-pygame.mixer.music.set_volume(0.1)
+pygame.mixer.music.set_volume(0.5)
+music_handler = Pause()
+music_handler.set_all_sounds_volume(0.5)
 
 
 def game():
 
-    load_music('main_background')
-    pygame.mixer.music.play(-1, 0.0)
-
+    if not music_handler.paused:
+        load_music('main_background')
+        pygame.mixer.music.play(-1, 0.0)
     entities.clear()
     items.clear()
     mobs.clear()
     player = Player(400, 200)
     entities.append(player)
-    # boss = Boss()
-    # entities.append(boss)
     death_screen_running = False
     camera = Camera(player)
     border = Border(camera, player)
@@ -96,7 +87,12 @@ def game():
     time_before_pause = 0
     enemies_to_defeat = 6
     boss_fight = False
-    if tutorial:
+    global wave_number
+    wave_number = 0
+    # tutorial
+    next_button = Button(
+        SCREEN_SIZE[0] - 25, SCREEN_SIZE[1] - 25, 'arrow')
+    if not tutorial:
         stage = stages['tutorial']
         tutorial_stage_index = 0
         new_tutorial_stage = True
@@ -108,7 +104,6 @@ def game():
     # Game Loop
     while running:
         # frame interval
-        global wave_number
         global paused
         time_passed = clock.tick(FPS)
         time_passed_seconds = time_passed / 1000.0
@@ -121,96 +116,126 @@ def game():
             if event.type == KEYDOWN and player.is_alive:
                 if event.key == K_ESCAPE:
                     running = False
-                    pygame.mixer.music.unload()
+                    if not music_handler.paused:
+                        load_music('menu')
+                        pygame.mixer.music.play(-1, 0.0)
                 if event.key == K_p:
                     paused = not paused
                     if paused:
                         time_before_pause = current_time
                     if not paused:
                         current_time = time_before_pause
+                if event.key == K_m:
+                    music_handler.toggle()
+
         pressed_keys = pygame.key.get_pressed()
         movement = Vector2(0, 0)
         if not paused:
             if not player.is_alive:
                 if player.death_screen_ready:
+                    # death screen menu
+                    restart_button = Button(SCREEN_SIZE[0]//2, 300, 'menu')
+                    menu_button = Button(SCREEN_SIZE[0]//2, 400, 'menu')
                     death_screen_running = True
-                    pygame.mixer.music.load(
-                        f'data/sounds/death_screen.wav')
-                    pygame.mixer.music.play(-1, 0.0)
+                    if not music_handler.paused:
+                        load_music('death_screen')
+                        pygame.mixer.music.play(-1, 0.0)
                     while death_screen_running:
+                        clickable = True
                         canvas.fill((0, 0, 0))
                         for event in pygame.event.get():
-                            if event.type == QUIT:
+                            if event.type == pygame.QUIT:
                                 pygame.quit()
                                 sys.exit()
 
                         if restart_button.draw(canvas):
-                            entities.clear()
-                            items.clear()
-                            mobs.clear()
+                            if clickable:
+                                entities.clear()
+                                items.clear()
+                                mobs.clear()
 
-                            player = Player(400, 200)
-                            entities.append(player)
+                                player = Player(400, 200)
+                                entities.append(player)
 
-                            camera = Camera(player)
-                            border = Border(camera, player)
-                            camera.setmethod(border)
+                                camera = Camera(player)
+                                border = Border(camera, player)
+                                camera.setmethod(border)
 
-                            current_time = 0
-                            time_before_pause = 0
-                            player.death_screen_ready = False
-                            death_screen_running = False
-                            stage = stages['starting']
-                            stage_start = 0
+                                current_time = 0
+                                time_before_pause = 0
+                                player.death_screen_ready = False
+                                death_screen_running = False
+                                stage = stages['starting']
+                                stage_start = 0
+                                wave_number = 1
+                                if not music_handler.paused:
+                                    load_music('main_background')
+                                    pygame.mixer.music.play(-1, 0.0)
+                                clickable = False
 
                         if menu_button.draw(canvas):
-                            running = False
-                            player.death_screen_ready = False
-                            death_screen_running = False
-                            pygame.mixer.music.unload()
+                            if clickable:
+                                player.death_screen_ready = False
+                                death_screen_running = False
+                                running = False
+                                if not music_handler.paused:
+                                    load_music('menu')
+                                    pygame.mixer.music.play(-1, 0.0)
+                                clickable = False
 
                         draw_text('GAME OVER', font_arial_big, WHITE,
-                                  canvas, SCREEN_SIZE[0]//2, 200-15)
+                                  canvas, SCREEN_SIZE[0]//2, 200)
                         draw_text('Restart', font_arial, WHITE,
-                                  canvas, SCREEN_SIZE[0]//2, 300-15)
+                                  canvas, SCREEN_SIZE[0]//2, 300+10)
                         draw_text('Back to menu', font_arial, WHITE,
-                                  canvas, SCREEN_SIZE[0]//2, 400-15)
+                                  canvas, SCREEN_SIZE[0]//2, 400+10)
                         window.blit(canvas, (0, 0))
                         pygame.display.update()
+
             else:
                 if stage == stages['starting']:
                     if new_stage:
-                        if not boss_fight:
-                            wave_number += 1
-
+                        wave_number += 1
+                        boss_fight = False
+                        if wave_number % 5 == 0:
+                            boss_fight = True
                         stage_start = current_time
                         new_stage = False
-                    if wave_number % 1 == 0:
-                        boss_fight = True
                     if current_time - stage_start > stage_loading_time:
                         stage = stages['fighting']
                         new_stage = True
                         mobs.clear()
-                        enemies_to_defeat = 6
+                        enemies_to_defeat = 2
                 elif stage == stages['fighting']:
                     if boss_fight:
                         if new_stage:
-                            boss = Boss(920, 100)
+                            boss = Boss(400, -420)
                             boss.desired_appear = Vector2(
-                                220, boss.rect.y)
+                                boss.rect.centerx, 100)
                             entities.append(boss)
                             new_stage = False
+                        if len(mobs) < 1 and not boss.is_alive:
+                            stage = stages['ending']
+                            new_stage = True
+                            boss_fight = False
                     elif new_stage:
+                        spawn_coords_x = random.choice([-450, 930])
+                        desired_coords_offset = 100
+                        if spawn_coords_x < 0:
+                            desired_coords_offset *= -1
                         # spawn mobs
                         mobs.extend(
-                            summon(Enemy, random.choice(
-                                [-420, 930]), 50, 2, wave_number, 150))
+                            summon(Enemy, spawn_coords_x, 50, 2, wave_number, desired_coords_offset, False))
                         new_stage = False
                         entities.extend(mobs)
                     elif not boss_fight:
                         if len(mobs) < 1 and enemies_to_defeat > 0:
+                            spawn_coords_x = random.choice([-450, 930])
+                            desired_coords_offset = 100
+                            if spawn_coords_x < 0:
+                                desired_coords_offset *= -1
                             mobs.extend(
-                                summon(Enemy, 920, 50, 2, wave_number, 150))
+                                summon(Enemy, spawn_coords_x, 50, 2, wave_number, desired_coords_offset, True))
                             entities.extend(mobs)
                         elif len(mobs) < 1 and enemies_to_defeat < 1:
                             stage = stages['ending']
@@ -276,15 +301,11 @@ def game():
 
                 if not entity.is_alive and entity.init_state and entity.type != 'player':
                     if entity.type == 'mob':
-                        if random.random() > 0.75:
+                        if random.random() > 0.85:
                             items.append(Potion(50, 'potion',
                                                 entity.hitbox.center, 32, 32))
                         mobs.pop(mobs.index(entity))
                         enemies_to_defeat -= 1
-                    if entity.type == 'boss':
-                        stage = stages['ending']
-                        new_stage = True
-
                     entities.pop(entities.index(entity))
 
             items_collisions = check_collision(player.hitbox, items)
@@ -349,36 +370,26 @@ def game():
             draw_text('PAUSED', humongous_font_arial, WHITE,
                       canvas, SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2)
 
+        # print(f'{stage} & {len(entities)}')
         window.blit(canvas, (0, 0))
         pygame.display.update()
 
 
 def main_menu():
-    pygame.mixer.music.load(f'data/sounds/menu.wav')
+    load_music('menu')
     pygame.mixer.music.play(-1, 0.0)
-    clicked = False
+    # menu
+    game_button = Button(SCREEN_SIZE[0]//2, 100, 'menu')
+    controls_button = Button(SCREEN_SIZE[0]//2, 200, 'menu')
+    credits_button = Button(SCREEN_SIZE[0]//2, 300, 'menu')
+    quit_button = Button(SCREEN_SIZE[0]//2, 400, 'menu')
+    toggle_audio_button = Button(
+        SCREEN_SIZE[0] - 50, SCREEN_SIZE[1] - 50, 'audio')
     while True:
         time_passed = clock.tick(FPS)
         time_passed_seconds = time_passed / 1000.0
         canvas.fill((0, 0, 0))
-
-        mx, my = pygame.mouse.get_pos()
-
-        if game_button.draw(canvas):
-            if clicked:
-                game()
-        if controls_button.draw(canvas):
-            if clicked:
-                controls()
-        if credits_button.draw(canvas):
-            if clicked:
-                show_credits()
-        if quit_button.draw(canvas):
-            if clicked:
-                pygame.quit()
-                sys.exit()
-
-        clicked = False
+        clickable = True
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
@@ -387,18 +398,43 @@ def main_menu():
                 if event.key == K_ESCAPE:
                     pygame.quit()
                     sys.exit()
-            if event.type == MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    clicked = True
+
+        mx, my = pygame.mouse.get_pos()
+        if game_button.draw(canvas):
+            if clickable:
+                clickable = False
+                game()
+        if controls_button.draw(canvas):
+            if clickable:
+                clickable = False
+                controls()
+        if credits_button.draw(canvas):
+            if clickable:
+                clickable = False
+                show_credits()
+        if quit_button.draw(canvas):
+            if clickable:
+                pygame.quit()
+                sys.exit()
+        if toggle_audio_button.draw(canvas):
+            if clickable:
+                music_handler.toggle()
+                if music_handler.paused:
+                    toggle_audio_button.image = pygame.image.load(
+                        'data/images/button/new/audio_off.png').convert_alpha()
+                else:
+                    toggle_audio_button.image = pygame.image.load(
+                        'data/images/button/new/audio_on.png').convert_alpha()
+                clickable = False
 
         draw_text('Start new game', font_arial, WHITE,
-                  canvas, SCREEN_SIZE[0]//2, 100-15)
+                  canvas, SCREEN_SIZE[0]//2, 100 + 10)
         draw_text('Controls', font_arial, WHITE,
-                  canvas, SCREEN_SIZE[0]//2, 200-15)
+                  canvas, SCREEN_SIZE[0]//2, 200 + 10)
         draw_text('Credits', font_arial, WHITE,
-                  canvas, SCREEN_SIZE[0]//2, 300-15)
+                  canvas, SCREEN_SIZE[0]//2, 300 + 10)
         draw_text('Quit', font_arial, WHITE,
-                  canvas, SCREEN_SIZE[0]//2, 400-15)
+                  canvas, SCREEN_SIZE[0]//2, 400 + 10)
         window.blit(canvas, (0, 0))
         pygame.display.update()
 
@@ -464,11 +500,6 @@ def show_credits():
 
         window.blit(canvas, (0, 0))
         pygame.display.update()
-
-
-def start_wave():
-    draw_text('Wave ' + str(wave_number), humongous_font_arial,
-              WHITE, canvas, SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2)
 
 
 main_menu()

@@ -46,6 +46,9 @@ class Player():
         self.hitbox = pygame.Rect(
             (self.rect.x + self.hitbox_x_offset, self.rect.y + self.hitbox_y_offset, self.rect.width, self.rect.height))
 
+        self.collision_hitbox = pygame.Rect(
+            (self.rect.x + self.hitbox_x_offset*2, self.rect.y + self.hitbox_y_offset*2, self.rect.width/3, self.rect.height/2))
+
         self.facing_positive = True
         # cooldowns
         self.cooldowns = {'melee': 2000, 'range': 2000}
@@ -62,7 +65,7 @@ class Player():
         self.projectiles = []
 
         # healthpoints
-        self.health_points = 1
+        self.health_points = 30
         self.max_hp = 200
         self.hp_bar_width = 400
         self.states = {'IDLING': 'IDLING', 'RUNNING': 'RUNNING',
@@ -87,12 +90,11 @@ class Player():
                     projectile.rect, new_entities)
                 if len(collision_list):
                     for col in collision_list:
-                        col.hit(projectile.damage)
-                        fireball_hit_sound.play()
+                        if not col.state == col.states['APPEARING']:
+                            col.hit(projectile.damage)
+                            fireball_hit_sound.play()
                     projectile.update(self.update_time, time,
                                       self.projectiles, True)
-                    # self.projectiles.pop(
-                    #     self.projectiles.index(projectile))
 
                 elif projectile.rect.x > RIGHT_BORDER or projectile.rect.x < LEFT_BORDER:
                     self.projectiles.pop(
@@ -132,6 +134,8 @@ class Player():
         self.rect, collisions = self.move(
             self.rect, movement, new_entities, time)
 
+        self.collision_hitbox.x = self.rect.x + self.hitbox_x_offset*2
+        self.collision_hitbox.y = self.rect.y + self.hitbox_y_offset*2
         # print(
         #     f'STATE {self.state}, ACTION {self.action}, HP {self.health_points}')
 
@@ -185,6 +189,8 @@ class Player():
                                                                            offset_x, self.rect.y - offset_y))
         pygame.draw.rect(display, (255, 0, 0), [
                          self.hitbox.x - offset_x, self.hitbox.y - offset_y, self.rect.width, self.rect.height], 2)
+        pygame.draw.rect(display, RED, [self.collision_hitbox.x - offset_x, self.collision_hitbox.y -
+                                        offset_y, self.collision_hitbox.width, self.collision_hitbox.height], 2)
 
         pygame.draw.rect(display, BLACK,
                          (4, 4, self.hp_bar_width+2, 22))
@@ -288,8 +294,9 @@ class Player():
 
         collision_list = check_collision(attack, new_entities)
         for col in collision_list:
-            col.hit(self.melee_damage)
-            bonk_sound.play()
+            if not col.state == col.states['APPEARING']:
+                col.hit(self.melee_damage)
+                bonk_sound.play()
 
     def fire(self):
         random.choice([fireball_cast_sound, fireball_cast2_sound]).play()
