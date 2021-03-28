@@ -55,18 +55,19 @@ class Player():
         # player cooldownsdd
         self.melee_attack_time = self.range_attack_time = -100000
         # attack damage
-        self.shoot_damage = 200
-        self.melee_damage = 180
+        self.melee_damage = 2000
 
         # speed
         self.speed = 250
 
         # projectiles
         self.projectiles = []
+        self.projectile_damage = 4000
+        self.projectile_speed = 400
 
         # healthpoints
-        self.health_points = 30
-        self.max_hp = 200
+        self.health_points = 2000
+        self.max_hp = 2000
         self.hp_bar_width = 400
         self.states = {'IDLING': 'IDLING', 'RUNNING': 'RUNNING',
                        'ATTACKING': 'ATTACKING', 'FIRING': 'FIRING', 'DYING': 'DYING',
@@ -108,7 +109,7 @@ class Player():
                 self.flip = False
             else:
                 self.flip = True
-        if self.init_state:
+        if self.init_state and self.is_alive:
             if self.state == 'IDLING':
                 self.set_action(Animation_type.Idle_Blinking)
             elif self.state == 'RUNNING':
@@ -116,9 +117,6 @@ class Player():
             elif self.state == 'HURTING':
                 self.init_state = False
                 self.set_action(Animation_type.Hurt)
-            elif self.state == 'DYING':
-                self.init_state = False
-                self.set_action(Animation_type.Dying)
             elif self.state == 'RUNNING-ATTACKING':
                 self.state_running_attacking(new_entities)
             elif self.state == 'RUNNING-FIRING':
@@ -130,7 +128,6 @@ class Player():
             elif self.state == 'FIRING':
                 self.init_state = False
                 self.set_action(Animation_type.Throwing_in_The_Air)
-
         self.rect, collisions = self.move(
             self.rect, movement, new_entities, time)
 
@@ -218,6 +215,7 @@ class Player():
             self.is_alive = False
             self.state = self.states['DYING']
             self.health_points = 0
+            self.set_action(Animation_type.Dying)
         elif self.is_alive and self.state == self.states['HURTING']:
             self.frame_index = 0
             self.init_state = False
@@ -304,11 +302,11 @@ class Player():
         if self.facing_positive:
             direction = 1
             projectile = Projectile(
-                Vector2(self.hitbox.x + self.hitbox.w, self.hitbox.centery), direction, Vector2(0, 0), 1, 25)
+                Vector2(self.hitbox.x + self.hitbox.w, self.hitbox.centery), direction, Vector2(0, 0), 1, self.projectile_damage, self.projectile_speed)
         else:
             direction = -1
             projectile = Projectile(
-                Vector2(self.hitbox.x, self.hitbox.centery), direction, Vector2(0, 0), 1, 25)
+                Vector2(self.hitbox.x, self.hitbox.centery), direction, Vector2(0, 0), 1, self.projectile_damage, self.projectile_speed)
 
         self.projectiles.append(projectile)
 

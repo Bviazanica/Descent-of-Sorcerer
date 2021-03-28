@@ -5,7 +5,7 @@ from data.gameobjects.vector2 import Vector2
 
 
 class Projectile(object):
-    def __init__(self, position, direction, desired, projectile_id, damage):
+    def __init__(self, position, direction, desired, projectile_id, damage, speed):
 
         # id
         self.projectile_id = projectile_id
@@ -36,7 +36,7 @@ class Projectile(object):
 
         self.desired = desired
         self.direction = direction
-        self.speed = 400 * self.direction
+        self.speed = speed * self.direction
         if projectile_id and self.direction == 1:
             self.flip = True
         else:

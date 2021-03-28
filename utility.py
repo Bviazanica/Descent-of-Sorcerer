@@ -26,14 +26,67 @@ def is_close(object1, object2, distance):
     return math.hypot(object2.centerx-object1.centerx, object2.centery-object1.centery) < float(distance)
 
 
-def summon(object, x, y, number, wave_number, x_offset, spawned):
+def summon(object, x, y, number, wave_number, x_to_destination, spawned, start_upgrade_after_wave):
     mobs = []
+    col = 0
+    x_offset = 125*int(x/abs(x))
+    y_offset = 125
     for mob in range(number):
-        mob = object(x, y, spawned)
-        mob.desired = Vector2(x - x_offset, y)
-        mobs.append(mob)
-        y += 125
+        if is_number_even(mob):
+            new_mob = object(x + (x_offset*col), y, spawned)
+            new_mob.desired = Vector2(x + x_to_destination, y)
+
+        else:
+            new_mob = object(x + (x_offset*col), y + y_offset, spawned)
+            new_mob.desired = Vector2(
+                x + x_to_destination, y+y_offset)
+            col += 1
+
+        if wave_number > start_upgrade_after_wave:
+            upgrade_mobs(new_mob, wave_number, start_upgrade_after_wave)
+        mobs.append(new_mob)
     return mobs
+
+
+def is_number_even(num):
+    if num == 0:
+        return True
+    if (num % 2) == 0:
+        return True
+    else:
+        return False
+
+
+def upgrade_mobs(target, wave_number, first_upgraded_wave):
+    target.damage += (wave_number - first_upgraded_wave)*3
+    target.max_hp += (wave_number - first_upgraded_wave)*5
+    target.health_points += (wave_number - first_upgraded_wave)*5
+
+
+def upgrade_boss(target, wave_number):
+    target.whirlwind_damage += (wave_number//5)*5
+    target.max_hp += ((wave_number//5) * 250)
+    target.health_points += ((wave_number//5) * 250)
+    target.projectile_damage += ((wave_number//5) * 5)
+    target.projectile_speed += ((wave_number//5) * 200)
+
+    new_cooldown_summon = target.cooldowns['summon']-(2000 * (wave_number//5))
+    new_cooldown_orbs = target.cooldowns['orbs'] - (200 * (wave_number//5))
+    new_cooldown_whirlwind = target.cooldowns['whirlwind'] - (
+        1000 * (wave_number//5))
+    if new_cooldown_summon >= 9000:
+        target.cooldowns['summon'] = new_cooldown_summon
+    else:
+        target.cooldowns['summon'] = 7000
+    if new_cooldown_orbs >= 1100:
+        target.cooldowns['orbs'] = new_cooldown_orbs
+    else:
+        target.cooldowns['orbs'] = 900
+
+    if new_cooldown_whirlwind >= 6000:
+        target.cooldowns['whirlwind'] = new_cooldown_whirlwind
+    else:
+        target.cooldowns['whirlwind'] = 5000
 
 
 def check_boundaries_for_x(self):
@@ -58,10 +111,10 @@ def get_entity_count(entities, entity_type):
     return entity_count
 
 
-def get_entities(entities, entity_type):
+def get_entities_to_avoid(entities):
     new_entities = []
     for entity in entities:
-        if entity.type == entity_type:
+        if entity.type != 'player':
             new_entities.append(entity)
     return new_entities
 

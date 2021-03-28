@@ -54,7 +54,7 @@ class Enemy():
         self.cooldowns = {'attack': 2000, 'new_destination': 5000}
         self.attack_time = self.new_destination_time = -100000
         # attack damage
-        self.damage = 5
+        self.damage = 10
 
         # how fast the acceleration vector follows desired vec
         self.max_force = 0.08
@@ -83,7 +83,7 @@ class Enemy():
         self.bottom_left = Vector2(0, 0)
         self.bottom_right = Vector2(0, 0)
         self.vector2 = Vector2(0, 0)
-        self.vector = Vector2(0, 0)
+        self.go_to = Vector2(0, 0)
 
     def update(self, time_passed, tick, player, mobs, stage):
         self.local_time = time_passed
@@ -95,7 +95,7 @@ class Enemy():
                 self.flip = False
 
             if self.state == 'APPEARING':
-                self.speed = 50
+                self.speed = 120
                 self.go_to = Vector2(
                     self.desired.x - self.rect.centerx, self.desired.y - self.rect.centery)
                 self.set_action(Animation_type.Running)
@@ -110,17 +110,16 @@ class Enemy():
                     self.hitbox.y = self.rect.y + self.hitbox_y_offset
                 else:
                     self.state = self.states['SEEKING']
-                    self.set_action(Animation_type.Walking)
             else:
                 if self.state == 'SEEKING':
                     self.acceleration += self.state_seeking(
-                        tick, player, mobs)
+                        tick, player)
                 elif self.state == 'HUNTING':
                     self.acceleration += self.state_hunting(
-                        tick, player, mobs)
+                        tick, player)
                 elif self.state == 'FLEE':
                     self.acceleration += self.state_flee(tick,
-                                                         player, mobs)
+                                                         player)
                 elif self.state == 'SACRIFICE':
                     self.acceleration += self.state_sacrifice(
                         tick, player)
@@ -145,6 +144,8 @@ class Enemy():
 
         elif self.state == self.states['DYING'] and not self.init_state:
             self.set_action(Animation_type.Dying)
+
+        # print(f'Mobs hp: {self.health_points} & mob damage: {self.damage}')
 
     def draw(self, display, offset_x, offset_y, player):
         display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
@@ -190,7 +191,7 @@ class Enemy():
             self.health_points -= damage
             self.init_state = True
 
-    def state_seeking(self, time, player, mobs):
+    def state_seeking(self, time, player):
         if self.init_state:
             self.heading = pygame.Rect(
                 randint(-268, 746), randint(-380, 1500), 1, 1)
@@ -206,9 +207,9 @@ class Enemy():
             self.new_destination_time = self.local_time
             self.set_destination()
 
-        return self.seek_with_approach(self.heading.center, time, mobs)
+        return self.seek_with_approach(self.heading.center, time)
 
-    def state_hunting(self, time, player, mobs):
+    def state_hunting(self, time, player):
         if self.init_state:
             self.speed = 150
             self.set_action(Animation_type.Running)
@@ -232,21 +233,21 @@ class Enemy():
         # print(
         #     f'{self.top_left,self.top_right,self.bottom_left,self.bottom_right}')
 
-        return self.seek_with_approach(player.hitbox.center, time, mobs)
+        return self.seek_with_approach(player.hitbox.center, time)
 
-    def state_flee(self, tick, player, mobs):
+    def state_flee(self, tick, player):
         if self.init_state:
             self.speed = 100
             self.set_action(Animation_type.Running)
             self.init_state = False
 
-        return self.flee(player.hitbox, tick, mobs)
+        return self.flee(player.hitbox, tick)
 
     def set_destination(self):
         self.heading = pygame.Rect(
             randint(-268 + 70, 746 - 70), randint(120 + 100, 640 - 100), 1, 1)
 
-    def seek_with_approach(self, target, tick, mobs):
+    def seek_with_approach(self, target, tick):
         # vector from position -> target position
         self.desired = (
             target - Vector2(self.hitbox.centerx, self.hitbox.centery))
@@ -269,7 +270,7 @@ class Enemy():
             self.set_action(Animation_type.Idle_Blinking)
             return Vector2(0, 0)
 
-    def flee(self, target, tick, mobs):
+    def flee(self, target, tick):
         steer = Vector2(0, 0)
         distance = Vector2(self.hitbox.centerx - target.centerx,
                            self.hitbox.y - target.centery)
@@ -288,7 +289,7 @@ class Enemy():
             if mob != self:
                 distance = Vector2(self.hitbox.centerx - mob.hitbox.centerx,
                                    self.hitbox.centery - mob.hitbox.centery)
-                if 0 < distance.length() < 50:
+                if 0 < distance.length() < 50 and self.acceleration.length() != 0:
                     self.acceleration += distance.normalize()
                     self.acceleration.scale_to_length(
                         self.desired.length())

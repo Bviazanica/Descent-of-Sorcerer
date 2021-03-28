@@ -42,15 +42,19 @@ class Boss():
             (self.rect.x + self.hitbox_x_offset, self.rect.y + self.hitbox_y_offset, self.rect.width, self.rect.height))
 
         # cooldown on abilities
-        self.cooldowns = {'summon': 5000, 'whirlwind': 10000, 'orbs': 2000}
+        self.cooldowns = {'summon': 17000, 'whirlwind': 11000, 'orbs': 1700}
         self.whirlwind_activation_time = self.orbs_activation_time = self.summon_activation_time = -10000
         # speed
         self.speed = 200
         # health points & bars properties
-        self.max_hp = 300
-        self.health_points = 300
+        self.max_hp = 250
+        self.health_points = 250
 
         self.hp_bar_width = self.rect.w
+
+        self.whirlwind_damage = 30
+        self.projectile_damage = 25
+        self.projectile_speed = 200
 
         self.update_time = 0
         self.animation_time = 0
@@ -67,18 +71,19 @@ class Boss():
 
         self.state = self.states['APPEARING']
         self.init_state = True
-        self.last_state = ''
 
         self.ready_to_attack = False
         self.ready_to_fire = True
         self.entities_summoned = False
+        self.spawn_mobs_number = 3
 
-    def update(self, player, time_passed, tick, movement, entities, Mob, stage, wave_number):
+    def update(self, player, time_passed, tick, movement, entities, Mob, stage, wave_number, start_upgrade_after_wave):
         self.update_time = time_passed
         new_entities = new_list_without_self(self, entities)
         self.desired = (
             player.hitbox.center - Vector2(self.hitbox.centerx, self.hitbox.centery))
-        self.update_animation(player, Mob, wave_number)
+        self.update_animation(player, Mob, wave_number,
+                              start_upgrade_after_wave)
 
         if self.is_alive:
             if self.desired[0] <= 0:
@@ -155,7 +160,8 @@ class Boss():
                 if len(collision_list):
                     for col in collision_list:
                         col.hit(projectile.damage)
-                    self.projectiles.pop(self.projectiles.index(projectile))
+                    projectile.update(self.update_time, tick,
+                                      self.projectiles, True)
 
                 elif projectile.rect.x > RIGHT_BORDER or projectile.rect.x < LEFT_BORDER or projectile.rect.y < CAMERA_TOP or projectile.rect.y > CAMERA_BOTTOM:
                     self.projectiles.pop(self.projectiles.index(projectile))
@@ -188,16 +194,15 @@ class Boss():
         self.desired.normalize_ip()
         if self.desired[0] <= 0:
             projectile = Projectile(
-                (self.hitbox.x, self.hitbox.centery), 1, self.desired, 0, 15)
+                (self.hitbox.x, self.hitbox.centery), 1, self.desired, 0, self.projectile_damage, self.projectile_speed)
         else:
             projectile = Projectile(
-                (self.hitbox.x + self.hitbox.width, self.hitbox.centery), 1, self.desired, 0, 15)
+                (self.hitbox.x + self.hitbox.width, self.hitbox.centery), 1, self.desired, 0, self.projectile_damage, self.projectile_speed)
         self.projectiles.append(projectile)
 
     def whirlwind(self, player):
         if is_close(self.hitbox, player.hitbox, 200):
-            self.damage = 20
-            player.hit(self.damage)
+            player.hit(self.whirlwind_damage)
 
     def heal(self, heal_amount):
         self.health_points += heal_amount
@@ -223,7 +228,7 @@ class Boss():
     def get_summoned_entities(self):
         return self.new_entities
 
-    def update_animation(self, player, Mob, wave_number):
+    def update_animation(self, player, Mob, wave_number, start_upgrade_after_wave):
         ANIMATION_COOLDOWN = 50
         # update image depending on current frame
         self.image = self.animation_list[self.action][self.frame_index]
@@ -263,7 +268,7 @@ class Boss():
             elif self.action == int(Animation_type.Summoning):
                 self.new_entities = summon(
                     Mob, self.hitbox.centerx + random.choice(
-                        [randint(-200, -50), randint(130, 200)]), 50, 3, wave_number, 0, False)
+                        [randint(-200, -50), randint(130, 200)]), 50, self.spawn_mobs_number, wave_number, 0, False, start_upgrade_after_wave)
                 self.entities_summoned = True
                 self.state = self.states['IDLING']
                 self.init_state = True

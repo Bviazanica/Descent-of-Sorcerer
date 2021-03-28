@@ -63,9 +63,10 @@ paused = False
 clickable = True
 stage_loading_time = 5000
 wave_number = 0
-pygame.mixer.music.set_volume(0.5)
+pygame.mixer.music.set_volume(0.1)
 music_handler = Pause()
 music_handler.set_all_sounds_volume(0.5)
+spawn_cooldown = 15000
 
 
 def game():
@@ -85,10 +86,16 @@ def game():
     running = True
     current_time = 0
     time_before_pause = 0
-    enemies_to_defeat = 6
+    enemies_to_defeat = 0
     boss_fight = False
     global wave_number
     wave_number = 0
+    spawn_mobs_number = 4
+    total_mobs_per_wave = 2
+    max_spawn_mobs_number = 8
+    last_spawned_time = 0
+    start_upgrade_after_wave = 5
+    remaining_mobs = 0
     # tutorial
     next_button = Button(
         SCREEN_SIZE[0] - 25, SCREEN_SIZE[1] - 25, 'arrow')
@@ -104,6 +111,7 @@ def game():
     # Game Loop
     while running:
         # frame interval
+        pygame.mixer.music.set_volume(0.1)
         global paused
         time_passed = clock.tick(FPS)
         time_passed_seconds = time_passed / 1000.0
@@ -168,6 +176,8 @@ def game():
                                 stage = stages['starting']
                                 stage_start = 0
                                 wave_number = 1
+                                enemies_to_defeat = 2
+                                spawn_mobs_number = 4
                                 if not music_handler.paused:
                                     load_music('main_background')
                                     pygame.mixer.music.play(-1, 0.0)
@@ -199,45 +209,71 @@ def game():
                         boss_fight = False
                         if wave_number % 5 == 0:
                             boss_fight = True
+                        else:
+                            total_mobs_per_wave += 2
+                            enemies_to_defeat = total_mobs_per_wave
                         stage_start = current_time
                         new_stage = False
                     if current_time - stage_start > stage_loading_time:
                         stage = stages['fighting']
                         new_stage = True
-                        mobs.clear()
-                        enemies_to_defeat = 2
+
                 elif stage == stages['fighting']:
                     if boss_fight:
                         if new_stage:
                             boss = Boss(400, -420)
                             boss.desired_appear = Vector2(
                                 boss.rect.centerx, 100)
+                            upgrade_boss(boss, wave_number)
                             entities.append(boss)
                             new_stage = False
+                            if spawn_mobs_number < max_spawn_mobs_number:
+                                spawn_mobs_number += 4
                         if len(mobs) < 1 and not boss.is_alive:
                             stage = stages['ending']
                             new_stage = True
                             boss_fight = False
                     elif new_stage:
+                        last_spawned_time = current_time
                         spawn_coords_x = random.choice([-450, 930])
                         desired_coords_offset = 100
-                        if spawn_coords_x < 0:
+                        if spawn_coords_x > 0:
                             desired_coords_offset *= -1
-                        # spawn mobs
-                        mobs.extend(
-                            summon(Enemy, spawn_coords_x, 50, 2, wave_number, desired_coords_offset, False))
+                        new_mobs = summon(Enemy, spawn_coords_x, 50, spawn_mobs_number,
+                                          wave_number, desired_coords_offset, True, start_upgrade_after_wave)
                         new_stage = False
-                        entities.extend(mobs)
+                        mobs.extend(new_mobs)
+                        entities.extend(new_mobs)
                     elif not boss_fight:
+                        spawn_coords_x = random.choice([-450, 930])
+                        desired_coords_offset = 100
+                        if spawn_coords_x > 0:
+                            desired_coords_offset *= -1
+                        remaining_mobs = enemies_to_defeat - len(mobs)
                         if len(mobs) < 1 and enemies_to_defeat > 0:
-                            spawn_coords_x = random.choice([-450, 930])
-                            desired_coords_offset = 100
-                            if spawn_coords_x < 0:
-                                desired_coords_offset *= -1
-                            mobs.extend(
-                                summon(Enemy, spawn_coords_x, 50, 2, wave_number, desired_coords_offset, True))
-                            entities.extend(mobs)
-                        elif len(mobs) < 1 and enemies_to_defeat < 1:
+                            if enemies_to_defeat >= spawn_mobs_number:
+                                last_spawned_time = current_time
+                                new_mobs = summon(Enemy, spawn_coords_x, 50, spawn_mobs_number//2,
+                                                  wave_number, desired_coords_offset, True, start_upgrade_after_wave)
+                            elif enemies_to_defeat >= spawn_mobs_number//2:
+                                last_spawned_time = current_time
+                                new_mobs = summon(Enemy, spawn_coords_x, 50, spawn_mobs_number//2,
+                                                  wave_number, desired_coords_offset, True, start_upgrade_after_wave)
+                            mobs.extend(new_mobs)
+                            entities.extend(new_mobs)
+                        elif remaining_mobs >= spawn_mobs_number and current_time - last_spawned_time > spawn_cooldown:
+                            last_spawned_time = current_time
+                            new_mobs = summon(Enemy, spawn_coords_x, 50, spawn_mobs_number,
+                                              wave_number, desired_coords_offset, True, start_upgrade_after_wave)
+                            mobs.extend(new_mobs)
+                            entities.extend(new_mobs)
+                        elif remaining_mobs < spawn_mobs_number and remaining_mobs > 0 and current_time - last_spawned_time > spawn_cooldown:
+                            last_spawned_time = current_time
+                            new_mobs = summon(Enemy, spawn_coords_x, 50, remaining_mobs,
+                                              wave_number, desired_coords_offset, True, start_upgrade_after_wave)
+                            mobs.extend(new_mobs)
+                            entities.extend(new_mobs)
+                        if enemies_to_defeat < 1:
                             stage = stages['ending']
                             new_stage = True
                 elif stage == stages['ending']:
@@ -248,7 +284,6 @@ def game():
                     if current_time - stage_start > stage_loading_time:
                         stage = stages['starting']
                         new_stage = True
-                    # upgrade wave
 
                 # movement
                 if pressed_keys[K_LEFT] or pressed_keys[K_a]:
@@ -289,24 +324,30 @@ def game():
                                   entities, stage)
                 elif entity.type == 'boss':
                     entity.update(player, current_time, time_passed_seconds, movement,
-                                  entities, Enemy, stage, wave_number)
+                                  entities, Enemy, stage, wave_number, start_upgrade_after_wave)
                     if entity.entities_summoned:
                         boss_summons = entity.get_summoned_entities()
+                        enemies_to_defeat = len(boss_summons)
                         mobs.extend(boss_summons)
-                        entities.extend(mobs)
+                        entities.extend(boss_summons)
                         entity.entities_summoned = False
                 elif entity.type == 'mob':
                     entity.update(current_time, time_passed_seconds, player,
-                                  get_entities(entities, 'mob'), stage)
+                                  get_entities_to_avoid(entities), stage)
 
+            for mob in mobs.copy():
+                if not mob.is_alive and mob.init_state:
+                    if random.random() > 0.85:
+                        items.append(Potion(50, 'potion',
+                                            entity.hitbox.center, 32, 32))
+                    mobs.pop(mobs.index(mob))
+            for entity in entities.copy():
                 if not entity.is_alive and entity.init_state and entity.type != 'player':
                     if entity.type == 'mob':
-                        if random.random() > 0.85:
-                            items.append(Potion(50, 'potion',
-                                                entity.hitbox.center, 32, 32))
-                        mobs.pop(mobs.index(entity))
                         enemies_to_defeat -= 1
+                        print(f'poping mob & {enemies_to_defeat}')
                     entities.pop(entities.index(entity))
+                    print(f'len enti & {len(entities)}')
 
             items_collisions = check_collision(player.hitbox, items)
             for item in items_collisions:
@@ -369,8 +410,8 @@ def game():
             canvas.blit(dim_screen, (0, 0))
             draw_text('PAUSED', humongous_font_arial, WHITE,
                       canvas, SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2)
-
-        # print(f'{stage} & {len(entities)}')
+        # print(
+        #     f'{enemies_to_defeat, len(mobs)} & {total_mobs_per_wave} & {len(entities)} & {remaining_mobs}')
         window.blit(canvas, (0, 0))
         pygame.display.update()
 
