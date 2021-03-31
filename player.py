@@ -46,29 +46,26 @@ class Player():
         self.hitbox = pygame.Rect(
             (self.rect.x + self.hitbox_x_offset, self.rect.y + self.hitbox_y_offset, self.rect.width, self.rect.height))
 
-        self.collision_hitbox = pygame.Rect(
-            (self.rect.x + self.hitbox_x_offset*2, self.rect.y + self.hitbox_y_offset*2, self.rect.width/3, self.rect.height/2))
-
         self.facing_positive = True
         # cooldowns
         self.cooldowns = {'melee': 2000, 'range': 2000}
         # player cooldownsdd
         self.melee_attack_time = self.range_attack_time = -100000
         # attack damage
-        self.melee_damage = 2000
+        self.melee_damage = 100
 
         # speed
         self.speed = 250
 
         # projectiles
         self.projectiles = []
-        self.projectile_damage = 4000
+        self.projectile_damage = 80
         self.projectile_speed = 400
 
         # healthpoints
         self.health_points = 2000
         self.max_hp = 2000
-        self.hp_bar_width = 400
+        self.hp_bar_width = 350
         self.states = {'IDLING': 'IDLING', 'RUNNING': 'RUNNING',
                        'ATTACKING': 'ATTACKING', 'FIRING': 'FIRING', 'DYING': 'DYING',
                        'HURTING': 'HURTING', 'RUNNING-FIRING': 'RUNNING-FIRING',
@@ -85,24 +82,6 @@ class Player():
         self.update_time = time_passed
         new_entities = new_list_without_self(self, entities)
         self.update_animation()
-        if self.projectiles:
-            for projectile in self.projectiles:
-                collision_list = check_collision(
-                    projectile.rect, new_entities)
-                if len(collision_list):
-                    for col in collision_list:
-                        if not col.state == col.states['APPEARING']:
-                            col.hit(projectile.damage)
-                            fireball_hit_sound.play()
-                    projectile.update(self.update_time, time,
-                                      self.projectiles, True)
-
-                elif projectile.rect.x > RIGHT_BORDER or projectile.rect.x < LEFT_BORDER:
-                    self.projectiles.pop(
-                        self.projectiles.index(projectile))
-
-                else:
-                    projectile.update(self.update_time, time, [], False)
 
         if self.init_state or self.state == self.states['HURTING']:
             if self.facing_positive:
@@ -128,54 +107,43 @@ class Player():
             elif self.state == 'FIRING':
                 self.init_state = False
                 self.set_action(Animation_type.Throwing_in_The_Air)
-        self.rect, collisions = self.move(
-            self.rect, movement, new_entities, time)
+        self.rect = self.move(
+            self.rect, movement, time)
 
-        self.collision_hitbox.x = self.rect.x + self.hitbox_x_offset*2
-        self.collision_hitbox.y = self.rect.y + self.hitbox_y_offset*2
+        if self.projectiles:
+            for projectile in self.projectiles:
+                collision_list = check_collision(
+                    projectile.rect, new_entities)
+                if len(collision_list):
+                    for col in collision_list:
+                        if not col.state == col.states['APPEARING']:
+                            if not projectile.destroy:
+                                print(f'{col, len(collision_list)}')
+                                col.hit(projectile.damage)
+                                fireball_hit_sound.play()
+                    projectile.update(self.update_time, time,
+                                      self.projectiles, True)
+
+                elif projectile.rect.x > RIGHT_BORDER or projectile.rect.x < LEFT_BORDER:
+                    self.projectiles.pop(
+                        self.projectiles.index(projectile))
+
+                else:
+                    projectile.update(self.update_time, time, [], False)
         # print(
         #     f'STATE {self.state}, ACTION {self.action}, HP {self.health_points}')
 
-    def move(self, rect, movement, new_entities, time):
-        collision_types = {'top': False, 'bottom': False,
-                           'left': False, 'right': False}
+    def move(self, rect, movement, time):
 
         self.rect.x += movement[0] * time * self.speed
-
-        # collisions on x axis
-        collision_list = check_collision(self.rect, new_entities)
-        # we check if we collide with obstacle, first we check X axis coords, then y axis
-        # this way we can correctly determine where the collision ocurred
-        # for col in collision_list:
-        #     if movement[0] > 0:
-        #         # rect build in method allows us to set rect to side of another rect
-        #         self.rect.right = col.hitbox.left
-        #         collision_types['right'] = True
-        #     elif movement[0] < 0:
-        #         # rect build in method allows us to set rect to side of another rect
-        #         self.rect.left = col.hitbox.right
-        #         collision_types['left'] = True
-
         check_boundaries_for_x(self)
         self.hitbox.x = self.rect.x + self.hitbox_x_offset
 
         self.rect.y += movement[1] * time * self.speed
-
-        # collisions on y axis
-        collision_list = check_collision(self.rect, new_entities)
-        # for col in collision_list:
-        #     if movement[1] > 0:
-        #         # rect build in method allows us to set rect to side of another rect
-        #         self.rect.bottom = col.hitbox.top
-        #         collision_types['bottom'] = True
-        #     elif movement[1] < 0:
-        #         # rect build in method allows us to set rect to side of another rect
-        #         self.rect.top = col.hitbox.bottom
-        #         collision_types['top'] = True
         check_boundaries_for_y(self)
         self.hitbox.y = self.rect.y + self.hitbox_y_offset
 
-        return self.rect, collision_types
+        return self.rect
 
     # draw player to canvas
     def draw(self, display, offset_x, offset_y, player):
@@ -186,11 +154,9 @@ class Player():
                                                                            offset_x, self.rect.y - offset_y))
         pygame.draw.rect(display, (255, 0, 0), [
                          self.hitbox.x - offset_x, self.hitbox.y - offset_y, self.rect.width, self.rect.height], 2)
-        pygame.draw.rect(display, RED, [self.collision_hitbox.x - offset_x, self.collision_hitbox.y -
-                                        offset_y, self.collision_hitbox.width, self.collision_hitbox.height], 2)
 
         pygame.draw.rect(display, BLACK,
-                         (4, 4, self.hp_bar_width+2, 22))
+                         (4, 4, self.hp_bar_width+2, 22), 1)
 
         pygame.draw.rect(display, RED,
                          (5, 5, self.hp_bar_width, 20))
@@ -198,17 +164,22 @@ class Player():
             pygame.draw.rect(display, GREEN,
                              (5, 5, self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points)), 20))
 
+    def draw_cooldowns(self, display, font):
         if get_cooldown_ready(self.range_attack_time, self.cooldowns['range'],  self.update_time):
-            pygame.draw.circle(display, GREEN, (25, 50), 20)
+            pygame.draw.circle(display, GREEN, (25, SCREEN_SIZE[1]-25), 20)
+            display.blit(self.fireball_icon, (5, SCREEN_SIZE[1]-35))
         else:
-            pygame.draw.circle(display, RED, (25, 50), 20)
+            pygame.draw.circle(display, RED, (25, SCREEN_SIZE[1]-25), 20)
+            draw_text(str(abs(self.update_time-self.range_attack_time-self.cooldowns['range'])//1000), font, WHITE,
+                      display, 25, SCREEN_SIZE[1]-34)
 
         if get_cooldown_ready(self.melee_attack_time, self.cooldowns['melee'], self.update_time):
-            pygame.draw.circle(display, GREEN, (70, 50), 20)
+            pygame.draw.circle(display, GREEN, (70, SCREEN_SIZE[1]-25), 20)
+            display.blit(self.staff_icon, (65, SCREEN_SIZE[1]-35))
         else:
-            pygame.draw.circle(display, RED, (70, 50), 20)
-        display.blit(self.fireball_icon, (5, 40))
-        display.blit(self.staff_icon, (65, 40))
+            pygame.draw.circle(display, RED, (70, SCREEN_SIZE[1]-25), 20)
+            draw_text(str(abs(self.update_time-self.melee_attack_time-self.cooldowns['melee'])//1000), font, WHITE,
+                      display, 70, SCREEN_SIZE[1]-34)
 
     def hit(self, damage):
         if self.health_points - damage <= 0:

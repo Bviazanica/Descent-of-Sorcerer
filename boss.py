@@ -50,7 +50,7 @@ class Boss():
         self.max_hp = 250
         self.health_points = 250
 
-        self.hp_bar_width = self.rect.w
+        self.hp_bar_width = 350
 
         self.whirlwind_damage = 30
         self.projectile_damage = 25
@@ -169,19 +169,18 @@ class Boss():
                 else:
                     projectile.update(self.update_time, tick, [], False)
 
+        # print(f'{self.state} & {self.init_state} & {self.action}')
+
     def draw(self, display, offset_x, offset_y, player):
         display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
                                                                            offset_x, self.rect.y - offset_y))
 
-        pygame.draw.rect(display, (255, 0, 0), [
-                         self.hitbox.x - offset_x, self.hitbox.y - offset_y, self.rect.width, self.rect.height], 2)
-
         # healthbar
-        pygame.draw.rect(display, (255, 0, 0),
-                         (self.hitbox.x - offset_x, self.hitbox.y - 15 - offset_y, self.hp_bar_width, 10))
+        pygame.draw.rect(display, (0, 0, 0),
+                         (SCREEN_SIZE[0] - 6 - self.hp_bar_width, 4, self.hp_bar_width + 2, 22), 1)
         if self.is_alive:
-            pygame.draw.rect(display, (0, 200, 0),
-                             (self.hitbox.x - offset_x, self.hitbox.y - 15 - offset_y, self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points)), 10))
+            pygame.draw.rect(display, (255, 0, 0),
+                             (SCREEN_SIZE[0] - 5 - self.hp_bar_width, 5, int(self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points))), 20))
 
         if(self.projectiles):
             for projectile in self.projectiles:
@@ -205,7 +204,10 @@ class Boss():
             player.hit(self.whirlwind_damage)
 
     def heal(self, heal_amount):
-        self.health_points += heal_amount
+        if self.health_points + heal_amount <= self.max_hp:
+            self.health_points += heal_amount
+        elif self.health_points + heal_amount > self.max_hp:
+            self.health_points = self.max_hp
 
     def hit(self, damage):
         if self.health_points - damage <= 0:

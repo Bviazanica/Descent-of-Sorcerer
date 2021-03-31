@@ -51,6 +51,7 @@ font_arial = pygame.font.Font(font_name, 24)
 font_arial_big = pygame.font.Font(font_name, 32)
 font_arial_smaller = pygame.font.Font(font_name, 14)
 font_arial_bold = pygame.font.SysFont(font_name, 24, True, False)
+font_arial_bold_numbers = pygame.font.SysFont(font_name, 30, True, False)
 entities = []
 items = []
 mobs = []
@@ -61,8 +62,9 @@ tutorial_stages = ['movement', 'attacks', 'game', 'pause']
 tutorial = True
 paused = False
 clickable = True
-stage_loading_time = 5000
+stage_loading_time = 200
 wave_number = 0
+boss_fight = False
 pygame.mixer.music.set_volume(0.1)
 music_handler = Pause()
 music_handler.set_all_sounds_volume(0.5)
@@ -70,10 +72,10 @@ spawn_cooldown = 15000
 
 
 def game():
-
     if not music_handler.paused:
         load_music('main_background')
         pygame.mixer.music.play(-1, 0.0)
+    global wave_number
     entities.clear()
     items.clear()
     mobs.clear()
@@ -87,8 +89,6 @@ def game():
     current_time = 0
     time_before_pause = 0
     enemies_to_defeat = 0
-    boss_fight = False
-    global wave_number
     wave_number = 0
     spawn_mobs_number = 4
     total_mobs_per_wave = 2
@@ -96,6 +96,7 @@ def game():
     last_spawned_time = 0
     start_upgrade_after_wave = 5
     remaining_mobs = 0
+    boss = []
     # tutorial
     next_button = Button(
         SCREEN_SIZE[0] - 25, SCREEN_SIZE[1] - 25, 'arrow')
@@ -207,7 +208,7 @@ def game():
                     if new_stage:
                         wave_number += 1
                         boss_fight = False
-                        if wave_number % 5 == 0:
+                        if wave_number % 1 == 0:
                             boss_fight = True
                         else:
                             total_mobs_per_wave += 2
@@ -273,7 +274,7 @@ def game():
                                               wave_number, desired_coords_offset, True, start_upgrade_after_wave)
                             mobs.extend(new_mobs)
                             entities.extend(new_mobs)
-                        if enemies_to_defeat < 1:
+                        if enemies_to_defeat < 1 and len(mobs) < 1:
                             stage = stages['ending']
                             new_stage = True
                 elif stage == stages['ending']:
@@ -333,7 +334,7 @@ def game():
                         entity.entities_summoned = False
                 elif entity.type == 'mob':
                     entity.update(current_time, time_passed_seconds, player,
-                                  get_entities_to_avoid(entities), stage)
+                                  get_entities_to_avoid(entities), stage, boss)
 
             for mob in mobs.copy():
                 if not mob.is_alive and mob.init_state:
@@ -345,9 +346,8 @@ def game():
                 if not entity.is_alive and entity.init_state and entity.type != 'player':
                     if entity.type == 'mob':
                         enemies_to_defeat -= 1
-                        print(f'poping mob & {enemies_to_defeat}')
+
                     entities.pop(entities.index(entity))
-                    print(f'len enti & {len(entities)}')
 
             items_collisions = check_collision(player.hitbox, items)
             for item in items_collisions:
@@ -401,17 +401,24 @@ def game():
                       canvas, SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2 - 100)
         elif stage == stages['fighting']:
             draw_text('Wave '+str(wave_number), font_arial_bold, WHITE,
-                      canvas, SCREEN_SIZE[0] - 50, 5)
+                      canvas, SCREEN_SIZE[0]//2, 10)
+            if boss_fight:
+                draw_text('Golem', font_arial_bold, WHITE,
+                          canvas, SCREEN_SIZE[0]-35, 30)
         elif stage == stages['ending']:
             draw_text('Wave '+str(wave_number) + ' completed', humongous_font_arial, WHITE,
                       canvas, SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2 - 100)
 
+        draw_text('You', font_arial_bold, WHITE,
+                  canvas, 20, 30)
         if paused:
             canvas.blit(dim_screen, (0, 0))
             draw_text('PAUSED', humongous_font_arial, WHITE,
                       canvas, SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2)
         # print(
         #     f'{enemies_to_defeat, len(mobs)} & {total_mobs_per_wave} & {len(entities)} & {remaining_mobs}')
+        player.draw_cooldowns(canvas, font_arial_bold_numbers)
+
         window.blit(canvas, (0, 0))
         pygame.display.update()
 

@@ -27,11 +27,6 @@ class Projectile(object):
         self.rect = self.image.get_rect()
         self.rect.center = self.position
 
-        self.hitbox_x_offset = 30
-        self.hitbox_y_offset = 5
-        self.hitbox = pygame.Rect(
-            self.rect.x + self.hitbox_x_offset, self.rect.y + self.hitbox_y_offset, self.image_width, self.image_height)
-
         self.damage = damage
 
         self.desired = desired
@@ -41,12 +36,13 @@ class Projectile(object):
             self.flip = True
         else:
             self.flip = False
+        self.destroy = False
 
     def update(self, time_passed, time, projectiles_list, destroy):
         self.update_time = time_passed
-        if destroy:
-            self.update_animation(projectiles_list, destroy)
-            self.damage = 0
+        self.destroy = destroy
+        if self.destroy:
+            self.update_animation(projectiles_list, self.destroy)
         else:
             self.update_animation([], False)
             if self.projectile_id:
@@ -54,9 +50,6 @@ class Projectile(object):
             else:
                 self.position += self.desired * time * self.speed
                 self.rect.center = self.position
-
-            self.hitbox[0] = self.rect.x + self.hitbox_x_offset
-            self.hitbox[1] = self.rect.y + self.hitbox_y_offset
 
     def draw(self, display, offset_x, offset_y):
         pygame.draw.rect(display, RED, [

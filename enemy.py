@@ -26,6 +26,8 @@ class Enemy():
         # time for animation update
         self.update_time = 0
 
+        # flee timer
+        self.flee_time = 0
         # image properties
         self.image = self.animation_list[self.action][self.frame_index]
         self.image_height = self.image.get_height()
@@ -85,14 +87,10 @@ class Enemy():
         self.vector2 = Vector2(0, 0)
         self.go_to = Vector2(0, 0)
 
-    def update(self, time_passed, tick, player, mobs, stage):
+    def update(self, time_passed, tick, player, mobs, stage, boss):
         self.local_time = time_passed
         self.update_animation()
         if self.is_alive:
-            if self.desired.x <= 0:
-                self.flip = True
-            else:
-                self.flip = False
 
             if self.state == 'APPEARING':
                 self.speed = 120
@@ -119,10 +117,10 @@ class Enemy():
                         tick, player)
                 elif self.state == 'FLEE':
                     self.acceleration += self.state_flee(tick,
-                                                         player)
+                                                         player, boss)
                 elif self.state == 'SACRIFICE':
                     self.acceleration += self.state_sacrifice(
-                        tick, player)
+                        tick, player, boss)
                 if self.init_state:
                     if self.state == 'HURTING':
                         self.init_state = False
@@ -138,19 +136,21 @@ class Enemy():
 
                 check_boundaries_for_x(self)
                 self.hitbox.x = self.rect.x + self.hitbox_x_offset
-
                 check_boundaries_for_y(self)
                 self.hitbox.y = self.rect.y + self.hitbox_y_offset
+                if self.acceleration.x <= 0:
+                    self.flip = True
+                else:
+                    self.flip = False
 
         elif self.state == self.states['DYING'] and not self.init_state:
             self.set_action(Animation_type.Dying)
 
-        # print(f'Mobs hp: {self.health_points} & mob damage: {self.damage}')
+        # print(f'{self.rect, self.acceleration}')
 
     def draw(self, display, offset_x, offset_y, player):
         display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
                                                                            offset_x, self.rect.y - offset_y))
-
         pygame.draw.rect(display, (255, 0, 0), [
                          self.hitbox.x - offset_x, self.hitbox.y - offset_y, self.rect.width, self.rect.height], 2)
 
@@ -160,7 +160,7 @@ class Enemy():
         if self.is_alive:
             pygame.draw.rect(display, (0, 200, 0),
                              (self.hitbox.x -
-                              offset_x, self.hitbox.y - 15 - offset_y, self.hp_bar_width - ((self.hp_bar_width/100)*(self.max_hp - self.health_points)), 10))
+                              offset_x, self.hitbox.y - 15 - offset_y, int(self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points))), 10))
 
         # pygame.draw.line(display, RED, self.hitbox.center - Vector2(offset_x,
         #                                                             offset_y), (self.hitbox.center + self.vector3 * 25) - Vector2(offset_x,
@@ -175,6 +175,7 @@ class Enemy():
                                                                                                                                     offset_y), 5)
 
     def hit(self, damage):
+        print(f'{self.state, self.action, self.frame_index, self.init_state}')
         if self.health_points - damage <= 0:
             self.is_alive = False
             self.state = self.states['DYING']
@@ -215,33 +216,47 @@ class Enemy():
             self.set_action(Animation_type.Running)
             self.init_state = False
 
-        if is_close(self.hitbox, player.hitbox, 30) and self.local_time - self.attack_time > self.cooldowns['attack']:
-            self.attack_time = self.local_time
-            self.set_action(Animation_type.Kicking)
-            self.init_state = False
-            player.hit(self.damage)
-
-        # self.top_left = Vector2(
-        #     player.hitbox.topleft[0] - self.hitbox.center[0], player.hitbox.topleft[1] - self.hitbox.center[1]).length()
-        # self.top_right = Vector2(player.hitbox.topright[0] - self.hitbox.center[0],
-        #                          player.hitbox.topright[1] - self.hitbox.center[1]).length()
-        # self.bottom_left = Vector2(
-        #     player.hitbox.bottomleft[0] - self.hitbox.center[0], player.hitbox.bottomleft[1] - self.hitbox.center[1]).length()
-        # self.bottom_right = Vector2(
-        #     player.hitbox.bottomright[0] - self.hitbox.center[0], player.hitbox.bottomright[1] - self.hitbox.center[1]).length()
-
-        # print(
-        #     f'{self.top_left,self.top_right,self.bottom_left,self.bottom_right}')
+        if is_close(self.hitbox, player.hitbox, 50):
+            self.set_action(Animation_type.Walking)
+            if self.local_time - self.attack_time > self.cooldowns['attack']:
+                self.attack_time = self.local_time
+                self.state = self.states['ATTACKING']
+                self.set_action(Animation_type.Kicking)
+                self.init_state = False
+                player.hit(self.damage)
 
         return self.seek_with_approach(player.hitbox.center, time)
 
-    def state_flee(self, tick, player):
+    def state_flee(self, tick, player, boss):
         if self.init_state:
+            self.flee_time = self.local_time
             self.speed = 100
             self.set_action(Animation_type.Running)
             self.init_state = False
 
+        if boss:
+            if self.local_time - self.flee_time > 5000 and boss.is_alive:
+                self.state = self.states['SACRIFICE']
+                self.set_action(Animation_type.Walking)
+
         return self.flee(player.hitbox, tick)
+
+    def state_sacrifice(self, tick, player, boss):
+        if self.init_state:
+            self.speed = 70
+            self.set_action(Animation_type.Walking)
+            self.init_state = False
+            self.flee_time = self.local_time
+
+        if self.hitbox.colliderect(boss.hitbox):
+            self.is_alive = False
+            self.init_state = True
+            boss.heal(50)
+
+        if not boss.is_alive:
+            self.state = self.states['FLEE']
+
+        return self.seek_with_approach(boss.hitbox.center, tick)
 
     def set_destination(self):
         self.heading = pygame.Rect(
@@ -291,8 +306,7 @@ class Enemy():
                                    self.hitbox.centery - mob.hitbox.centery)
                 if 0 < distance.length() < 50 and self.acceleration.length() != 0:
                     self.acceleration += distance.normalize()
-                    self.acceleration.scale_to_length(
-                        self.desired.length())
+                    self.acceleration.scale_to_length(2.0)
                     self.vector2 = self.acceleration
                 elif distance.length() == 0:
                     self.acceleration += Vector2(0, 0)
@@ -319,7 +333,7 @@ class Enemy():
                 self.init_state = True
             elif self.action == int(Animation_type.Hurt):
                 self.init_state = True
-                if self.is_alive and self.health_points <= 20:
+                if self.is_alive and self.health_points <= self.max_hp//5:
                     self.state = self.states['FLEE']
                 elif self.is_alive:
                     self.state = self.last_state
