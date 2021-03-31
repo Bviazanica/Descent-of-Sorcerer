@@ -1,8 +1,8 @@
 import random
 import pygame
-from utility import *
+from data.utility import *
 from pygame.locals import *
-from projectile import Projectile
+from data.projectile import Projectile
 Vector2 = pygame.math.Vector2
 
 

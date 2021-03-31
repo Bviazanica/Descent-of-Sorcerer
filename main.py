@@ -3,17 +3,16 @@ import os
 import sys
 import pygame
 import random
-from data import *
-from utility import *
-from boss import Boss
-from button import Button
-from enemy import Enemy
+from data.utility import *
+from data.boss import Boss
+from data.button import Button
+from data.enemy import Enemy
 from pygame import mixer
-from player import Player
+from data.player import Player
 from pygame.locals import *
-from toggle_music import Pause
 from data.camera.camera import *
 from data.globals.globals import *
+from data.toggle_music import Pause
 from data.gameobjects.vector2 import Vector2
 from data.objects.items.potion import Potion
 
@@ -72,8 +71,8 @@ spawn_cooldown = 15000
 
 
 def game():
+    load_music('main_background')
     if not music_handler.paused:
-        load_music('main_background')
         pygame.mixer.music.play(-1, 0.0)
     global wave_number
     entities.clear()
@@ -125,8 +124,8 @@ def game():
             if event.type == KEYDOWN and player.is_alive:
                 if event.key == K_ESCAPE:
                     running = False
+                    load_music('menu')
                     if not music_handler.paused:
-                        load_music('menu')
                         pygame.mixer.music.play(-1, 0.0)
                 if event.key == K_p:
                     paused = not paused
@@ -146,8 +145,8 @@ def game():
                     restart_button = Button(SCREEN_SIZE[0]//2, 300, 'menu')
                     menu_button = Button(SCREEN_SIZE[0]//2, 400, 'menu')
                     death_screen_running = True
+                    load_music('death_screen')
                     if not music_handler.paused:
-                        load_music('death_screen')
                         pygame.mixer.music.play(-1, 0.0)
                     while death_screen_running:
                         clickable = True
@@ -179,8 +178,8 @@ def game():
                                 wave_number = 1
                                 enemies_to_defeat = 2
                                 spawn_mobs_number = 4
+                                load_music('main_background')
                                 if not music_handler.paused:
-                                    load_music('main_background')
                                     pygame.mixer.music.play(-1, 0.0)
                                 clickable = False
 
@@ -189,8 +188,8 @@ def game():
                                 player.death_screen_ready = False
                                 death_screen_running = False
                                 running = False
+                                load_music('menu')
                                 if not music_handler.paused:
-                                    load_music('menu')
                                     pygame.mixer.music.play(-1, 0.0)
                                 clickable = False
 
@@ -467,13 +466,14 @@ def main_menu():
         if toggle_audio_button.draw(canvas):
             if clickable:
                 music_handler.toggle()
-                if music_handler.paused:
-                    toggle_audio_button.image = pygame.image.load(
-                        'data/images/button/new/audio_off.png').convert_alpha()
-                else:
-                    toggle_audio_button.image = pygame.image.load(
-                        'data/images/button/new/audio_on.png').convert_alpha()
                 clickable = False
+
+        if music_handler.paused:
+            toggle_audio_button.image = pygame.image.load(
+                'data/images/button/new/audio_off.png').convert_alpha()
+        else:
+            toggle_audio_button.image = pygame.image.load(
+                'data/images/button/new/audio_on.png').convert_alpha()
 
         draw_text('Start new game', font_arial, WHITE,
                   canvas, SCREEN_SIZE[0]//2, 100 + 10)

@@ -2,9 +2,9 @@ import os
 import sys
 import pygame
 import random
-from utility import *
+from data.utility import *
 from pygame.locals import *
-from projectile import Projectile
+from data.projectile import Projectile
 from data.globals.globals import *
 from data.gameobjects.vector2 import Vector2
 
@@ -48,7 +48,7 @@ class Player():
 
         self.facing_positive = True
         # cooldowns
-        self.cooldowns = {'melee': 2000, 'range': 2000}
+        self.cooldowns = {'melee': 2000, 'range': 0}
         # player cooldownsdd
         self.melee_attack_time = self.range_attack_time = -100000
         # attack damage
@@ -59,12 +59,12 @@ class Player():
 
         # projectiles
         self.projectiles = []
-        self.projectile_damage = 80
+        self.projectile_damage = 5
         self.projectile_speed = 400
 
         # healthpoints
-        self.health_points = 2000
-        self.max_hp = 2000
+        self.health_points = 200
+        self.max_hp = 200
         self.hp_bar_width = 350
         self.states = {'IDLING': 'IDLING', 'RUNNING': 'RUNNING',
                        'ATTACKING': 'ATTACKING', 'FIRING': 'FIRING', 'DYING': 'DYING',
@@ -114,22 +114,21 @@ class Player():
             for projectile in self.projectiles:
                 collision_list = check_collision(
                     projectile.rect, new_entities)
-                if len(collision_list):
+                if len(collision_list) and not projectile.destroy:
+                    projectile.destroy = True
                     for col in collision_list:
                         if not col.state == col.states['APPEARING']:
-                            if not projectile.destroy:
-                                print(f'{col, len(collision_list)}')
-                                col.hit(projectile.damage)
-                                fireball_hit_sound.play()
+                            col.hit(projectile.damage)
+                            fireball_hit_sound.play()
                     projectile.update(self.update_time, time,
-                                      self.projectiles, True)
+                                      self.projectiles)
 
                 elif projectile.rect.x > RIGHT_BORDER or projectile.rect.x < LEFT_BORDER:
                     self.projectiles.pop(
                         self.projectiles.index(projectile))
 
                 else:
-                    projectile.update(self.update_time, time, [], False)
+                    projectile.update(self.update_time, time, self.projectiles)
         # print(
         #     f'STATE {self.state}, ACTION {self.action}, HP {self.health_points}')
 
@@ -160,9 +159,11 @@ class Player():
 
         pygame.draw.rect(display, RED,
                          (5, 5, self.hp_bar_width, 20))
+        healthbar_width = int(
+            self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points)))
         if self.is_alive:
             pygame.draw.rect(display, GREEN,
-                             (5, 5, self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points)), 20))
+                             (5, 5, healthbar_width, 20))
 
     def draw_cooldowns(self, display, font):
         if get_cooldown_ready(self.range_attack_time, self.cooldowns['range'],  self.update_time):

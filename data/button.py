@@ -4,7 +4,7 @@ import sys
 import pygame
 import random
 from data import *
-from utility import *
+from data.utility import *
 from pygame.locals import *
 from data.globals.globals import *
 

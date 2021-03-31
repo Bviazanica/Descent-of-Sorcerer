@@ -1,5 +1,5 @@
 import pygame
-from utility import *
+from data.utility import *
 from pygame.locals import *
 from data.gameobjects.vector2 import Vector2
 
@@ -37,14 +37,14 @@ class Projectile(object):
         else:
             self.flip = False
         self.destroy = False
+        self.collision = False
 
-    def update(self, time_passed, time, projectiles_list, destroy):
+    def update(self, time_passed, time, projectiles_list):
         self.update_time = time_passed
-        self.destroy = destroy
         if self.destroy:
-            self.update_animation(projectiles_list, self.destroy)
+            self.update_animation(projectiles_list)
         else:
-            self.update_animation([], False)
+            self.update_animation([])
             if self.projectile_id:
                 self.rect.x += (self.speed * time)
             else:
@@ -57,14 +57,14 @@ class Projectile(object):
         display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
                                                                            offset_x, self.rect.y - offset_y))
 
-    def update_animation(self, projectiles_list, destroy):
+    def update_animation(self, projectiles_list):
         ANIMATION_COOLDOWN = 10
         if self.projectile_id:
             self.image = self.animation_list[self.frame_index]
         if self.update_time - self.animation_time > ANIMATION_COOLDOWN:
             self.animation_time = self.update_time
             self.frame_index += 1
-        if not destroy and self.frame_index >= 4:
+        if not self.destroy and self.frame_index >= 4:
             self.frame_index = 0
-        elif destroy and self.frame_index >= len(self.animation_list):
+        elif self.destroy and self.frame_index >= len(self.animation_list):
             projectiles_list.pop(projectiles_list.index(self))

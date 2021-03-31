@@ -1,8 +1,8 @@
 import random
 import pygame
-from utility import *
+from data.utility import *
 from pygame.locals import *
-from projectile import Projectile
+from data.projectile import Projectile
 Vector2 = pygame.math.Vector2
 
 
@@ -43,7 +43,7 @@ class Boss():
 
         # cooldown on abilities
         self.cooldowns = {'summon': 17000, 'whirlwind': 11000, 'orbs': 1700}
-        self.whirlwind_activation_time = self.orbs_activation_time = self.summon_activation_time = -10000
+        self.whirlwind_activation_time = self.orbs_activation_time = self.summon_activation_time = -100000
         # speed
         self.speed = 200
         # health points & bars properties
@@ -70,7 +70,7 @@ class Boss():
                        'ATTACKING': 'ATTACKING', 'IDLING': 'IDLING', 'FIRING': 'FIRING', 'APPEARING': 'APPEARING'}
 
         self.state = self.states['APPEARING']
-        self.init_state = True
+        self.init_state = False
 
         self.ready_to_attack = False
         self.ready_to_fire = True
@@ -92,6 +92,7 @@ class Boss():
                 self.flip = False
 
             if self.state == 'APPEARING':
+                print('tu :D')
                 self.go_to = Vector2(
                     self.desired_appear.x - self.rect.centerx, self.desired_appear.y - self.rect.centery)
                 self.set_action(Animation_type.Falling)
@@ -105,8 +106,9 @@ class Boss():
                     self.hitbox.x = self.rect.x + self.hitbox_x_offset
                     self.hitbox.y = self.rect.y + self.hitbox_y_offset
                 else:
+                    print('davam na idle')
                     self.state = self.states['IDLING']
-                    self.set_action(Animation_type.Walking)
+                    self.set_action(Animation_type.Idle_Blinking)
                     self.init_state = True
             else:
                 if self.init_state and self.state != self.states['DYING']:
@@ -114,10 +116,11 @@ class Boss():
                         self.ready_to_attack = True
                         self.timeout = self.update_time
                     if self.timeout != 0 and self.update_time - self.timeout > 2000 and self.ready_to_attack:
-
                         self.timeout = 0
                         self.state = self.states['ATTACKING']
                 if not self.ready_to_attack and self.init_state:
+                    print(
+                        f'{get_entity_count(new_entities, "mob") == 0} & {self.update_time - self.summon_activation_time > self.cooldowns["summon"]}')
                     if get_entity_count(new_entities, 'mob') == 0 and self.update_time - self.summon_activation_time > self.cooldowns['summon']:
                         self.state = self.states['SUMMONING']
                     elif self.update_time - self.orbs_activation_time > self.cooldowns['orbs']:
@@ -127,26 +130,17 @@ class Boss():
                 if self.init_state:
                     if self.state == 'IDLING':
                         self.set_action(Animation_type.Idle_Blinking)
-                    elif self.state == 'HURTING':
-                        self.init_state = False
-                        self.set_action(Animation_type.Hurt)
                     elif self.state == 'SUMMONING':
-                        self.summon_activation_time = self.update_time
                         self.init_state = False
                         self.set_action(Animation_type.Summoning)
                     elif self.state == 'ATTACKING':
-                        self.whirlwind_activation_time = self.update_time
                         self.init_state = False
                         self.set_action(
                             Animation_type.Slashing_in_The_Air)
                     elif self.state == 'FIRING':
-                        self.orbs_activation_time = self.update_time
                         self.init_state = False
                         self.set_action(
                             Animation_type.Throwing_in_The_Air)
-                    elif self.state == 'APPEARING':
-                        self.init_state = False
-                        self.set_action(Animation_type.Walking)
 
                     check_boundaries_for_x(self)
                     self.hitbox.x = self.rect.x + self.hitbox_x_offset
@@ -157,19 +151,21 @@ class Boss():
             for projectile in self.projectiles:
                 collision_list = check_collision(
                     projectile.rect, new_entities)
-                if len(collision_list):
+                if len(collision_list) and not projectile.destroy:
+                    projectile.destroy = True
                     for col in collision_list:
+
                         col.hit(projectile.damage)
                     projectile.update(self.update_time, tick,
-                                      self.projectiles, True)
+                                      self.projectiles)
 
                 elif projectile.rect.x > RIGHT_BORDER or projectile.rect.x < LEFT_BORDER or projectile.rect.y < CAMERA_TOP or projectile.rect.y > CAMERA_BOTTOM:
                     self.projectiles.pop(self.projectiles.index(projectile))
 
                 else:
-                    projectile.update(self.update_time, tick, [], False)
+                    projectile.update(self.update_time, tick, self.projectiles)
 
-        # print(f'{self.state} & {self.init_state} & {self.action}')
+        print(f'{self.state} & {self.init_state} & {self.action} & {self.frame_index} & {self.ready_to_attack, self.ready_to_fire}')
 
     def draw(self, display, offset_x, offset_y, player):
         display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
@@ -178,9 +174,11 @@ class Boss():
         # healthbar
         pygame.draw.rect(display, (0, 0, 0),
                          (SCREEN_SIZE[0] - 6 - self.hp_bar_width, 4, self.hp_bar_width + 2, 22), 1)
+        healthbar_width = int(
+            self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points)))
         if self.is_alive:
             pygame.draw.rect(display, (255, 0, 0),
-                             (SCREEN_SIZE[0] - 5 - self.hp_bar_width, 5, int(self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points))), 20))
+                             (SCREEN_SIZE[0] - 5 - healthbar_width, 5, healthbar_width, 20))
 
         if(self.projectiles):
             for projectile in self.projectiles:
@@ -217,15 +215,15 @@ class Boss():
             self.init_state = False
             self.health_points = 0
             boss_hurt_sound.play()
-        elif self.is_alive and self.state == self.states['HURTING']:
-            self.init_state = True
-            self.frame_index = 0
-            self.init_state = False
-            self.health_points -= damage
-        elif self.is_alive and self.state != self.states['DYING']:
-            self.init_state = True
-            self.state = self.states['HURTING']
-            self.health_points -= damage
+        if self.is_alive:
+            if self.state == self.states['HURTING'] or self.state == self.states['ATTACKING']:
+                self.health_points -= damage
+            elif self.state != self.states['DYING']:
+                self.state = self.states['HURTING']
+                self.set_action(Animation_type.Hurt)
+                self.frame_index = 0
+                self.init_state = False
+                self.health_points -= damage
 
     def get_summoned_entities(self):
         return self.new_entities
@@ -235,7 +233,7 @@ class Boss():
         # update image depending on current frame
         self.image = self.animation_list[self.action][self.frame_index]
         # check if time passed since last update
-        if self.action == int(Animation_type.Kicking) or self.action == int(Animation_type.Hurt):
+        if self.action == int(Animation_type.Slashing_in_The_Air) or self.action == int(Animation_type.Hurt):
             ANIMATION_COOLDOWN = 30
 
         if self.action == int(Animation_type.Throwing_in_The_Air):
@@ -247,9 +245,11 @@ class Boss():
         # out of images - resets
 
         if self.action == int(Animation_type.Slashing_in_The_Air) and self.frame_index == len(self.animation_list[self.action])/2 and self.ready_to_attack:
+            self.whirlwind_activation_time = self.update_time
             self.whirlwind(player)
             self.ready_to_attack = False
         if self.action == int(Animation_type.Throwing_in_The_Air) and self.frame_index == 2 and self.ready_to_fire:
+            self.orbs_activation_time = self.update_time
             self.fire(player.hitbox.center)
             self.ready_to_fire = False
         if self.frame_index >= len(self.animation_list[self.action]):
@@ -257,9 +257,9 @@ class Boss():
                 self.frame_index = len(self.animation_list[self.action]) - 1
                 self.init_state = True
             elif self.action == int(Animation_type.Hurt):
+                self.state = self.states['IDLING']
                 self.frame_index = 0
                 self.init_state = True
-                self.state = self.states['IDLING']
             elif self.action == int(Animation_type.Slashing_in_The_Air):
                 self.state = self.states['IDLING']
                 self.init_state = True
@@ -268,6 +268,7 @@ class Boss():
                 self.init_state = True
                 self.ready_to_fire = True
             elif self.action == int(Animation_type.Summoning):
+                self.summon_activation_time = self.update_time
                 self.new_entities = summon(
                     Mob, self.hitbox.centerx + random.choice(
                         [randint(-200, -50), randint(130, 200)]), 50, self.spawn_mobs_number, wave_number, 0, False, start_upgrade_after_wave)

@@ -1,6 +1,6 @@
 import math
 import pygame
-from utility import *
+from data.utility import *
 from random import randint
 from pygame.locals import *
 from data.globals.globals import *
@@ -175,7 +175,6 @@ class Enemy():
                                                                                                                                     offset_y), 5)
 
     def hit(self, damage):
-        print(f'{self.state, self.action, self.frame_index, self.init_state}')
         if self.health_points - damage <= 0:
             self.is_alive = False
             self.state = self.states['DYING']
@@ -224,7 +223,8 @@ class Enemy():
                 self.set_action(Animation_type.Kicking)
                 self.init_state = False
                 player.hit(self.damage)
-
+        else:
+            self.set_action(Animation_type.Running)
         return self.seek_with_approach(player.hitbox.center, time)
 
     def state_flee(self, tick, player, boss):

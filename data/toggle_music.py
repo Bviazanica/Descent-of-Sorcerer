@@ -11,6 +11,9 @@ class Pause(object):
         if self.paused:
             pygame.mixer.music.unpause()
             self.set_all_sounds_volume(0.5)
+
+            if not pygame.mixer.music.get_busy():
+                pygame.mixer.music.play()
         if not self.paused:
             pygame.mixer.music.pause()
             self.mute_all_sound_effect()
