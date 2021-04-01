@@ -172,7 +172,7 @@ class Player():
         else:
             pygame.draw.circle(display, RED, (25, SCREEN_SIZE[1]-25), 20)
             draw_text(str(abs(self.update_time-self.range_attack_time-self.cooldowns['range'])//1000), font, WHITE,
-                      display, 25, SCREEN_SIZE[1]-34)
+                      display, 25, SCREEN_SIZE[1]-40)
 
         if get_cooldown_ready(self.melee_attack_time, self.cooldowns['melee'], self.update_time):
             pygame.draw.circle(display, GREEN, (70, SCREEN_SIZE[1]-25), 20)
@@ -180,7 +180,7 @@ class Player():
         else:
             pygame.draw.circle(display, RED, (70, SCREEN_SIZE[1]-25), 20)
             draw_text(str(abs(self.update_time-self.melee_attack_time-self.cooldowns['melee'])//1000), font, WHITE,
-                      display, 70, SCREEN_SIZE[1]-34)
+                      display, 70, SCREEN_SIZE[1]-40)
 
     def hit(self, damage):
         if self.health_points - damage <= 0:

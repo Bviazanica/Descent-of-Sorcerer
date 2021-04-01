@@ -44,13 +44,17 @@ tutorial_text.fill((0, 0, 0, 180))
 
 
 # font
-font_name = pygame.font.match_font('arial')
-humongous_font_arial = pygame.font.SysFont(font_name, 64, True, False)
-font_arial = pygame.font.Font(font_name, 24)
-font_arial_big = pygame.font.Font(font_name, 32)
-font_arial_smaller = pygame.font.Font(font_name, 14)
-font_arial_bold = pygame.font.SysFont(font_name, 24, True, False)
-font_arial_bold_numbers = pygame.font.SysFont(font_name, 30, True, False)
+humongous_font_gothikka = pygame.font.Font('data/fonts/Gothikka Bold.ttf', 70)
+humongous_font_gothikka.set_bold(True)
+font_gothikka = pygame.font.Font('data/fonts/Gothikka.ttf', 24)
+font_gothikka.set_bold(True)
+font_gothikka_big = pygame.font.Font('data/fonts/Gothikka Bold.ttf', 54)
+font_gothikka_smaller = pygame.font.Font('data/fonts/Gothikka.ttf', 24)
+font_gothikka_bold = pygame.font.Font('data/fonts/Gothikka Bold.ttf', 30)
+font_gothikka_bold.set_bold(True)
+font_gothikka_bold_numbers = pygame.font.Font(
+    'data/fonts/Gothikka Bold.ttf', 28)
+font_gothikka_bold_numbers.set_bold(True)
 entities = []
 items = []
 mobs = []
@@ -99,7 +103,7 @@ def game():
     # tutorial
     next_button = Button(
         SCREEN_SIZE[0] - 25, SCREEN_SIZE[1] - 25, 'arrow')
-    if not tutorial:
+    if tutorial:
         stage = stages['tutorial']
         tutorial_stage_index = 0
         new_tutorial_stage = True
@@ -155,6 +159,9 @@ def game():
                             if event.type == pygame.QUIT:
                                 pygame.quit()
                                 sys.exit()
+                            if event.type == KEYDOWN:
+                                if event.key == K_m:
+                                    music_handler.toggle()
 
                         if restart_button.draw(canvas):
                             if clickable:
@@ -193,12 +200,12 @@ def game():
                                     pygame.mixer.music.play(-1, 0.0)
                                 clickable = False
 
-                        draw_text('GAME OVER', font_arial_big, WHITE,
+                        draw_text('GAME OVER', font_gothikka_big, WHITE,
                                   canvas, SCREEN_SIZE[0]//2, 200)
-                        draw_text('Restart', font_arial, WHITE,
-                                  canvas, SCREEN_SIZE[0]//2, 300+10)
-                        draw_text('Back to menu', font_arial, WHITE,
-                                  canvas, SCREEN_SIZE[0]//2, 400+10)
+                        draw_text('Restart', font_gothikka, WHITE,
+                                  canvas, SCREEN_SIZE[0]//2, 300+12)
+                        draw_text('Back to menu', font_gothikka, WHITE,
+                                  canvas, SCREEN_SIZE[0]//2, 400+12)
                         window.blit(canvas, (0, 0))
                         pygame.display.update()
 
@@ -378,45 +385,45 @@ def game():
             if new_tutorial_stage:
                 new_tutorial_stage = False
                 if tutorial_stage == tutorial_stages[int(Tutorial_stage.movement)]:
-                    draw_text('Move with W,A,S,D or with arrow keys on your keyboard.', font_arial, WHITE,
+                    draw_text('Move with W,A,S,D or with arrow keys on your keyboard.', font_gothikka, WHITE,
                               tutorial_text, SCREEN_SIZE[0]//2, 10)
                 if tutorial_stage == tutorial_stages[int(Tutorial_stage.attacks)]:
 
-                    draw_text('You have two abilities, melee and fireball.', font_arial, WHITE,
+                    draw_text('You have two abilities, melee and fireball.', font_gothikka, WHITE,
                               tutorial_text, SCREEN_SIZE[0]//2, 10)
-                    draw_text('Each ability has a cooldown time.', font_arial, WHITE,
+                    draw_text('Each ability has a cooldown time.', font_gothikka, WHITE,
                               tutorial_text, SCREEN_SIZE[0]//2, 35)
-                    draw_text('Melee attacks can hit multiple enemies.', font_arial, WHITE,
+                    draw_text('Melee attacks can hit multiple enemies.', font_gothikka, WHITE,
                               tutorial_text, SCREEN_SIZE[0]//2, 60)
                 if tutorial_stage == tutorial_stages[int(Tutorial_stage.game)]:
-                    draw_text('Fight your way through waves of enemies to challange the boss.', font_arial, WHITE,
+                    draw_text('Fight your way through waves of enemies to challange the boss.', font_gothikka, WHITE,
                               tutorial_text, SCREEN_SIZE[0]//2, 10)
                 if tutorial_stage == tutorial_stages[int(Tutorial_stage.pause)]:
-                    draw_text('You can pause your game anytime by pressing P', font_arial, WHITE,
+                    draw_text('You can pause your game anytime by pressing P', font_gothikka, WHITE,
                               tutorial_text, SCREEN_SIZE[0]//2, 10)
 
         elif stage == stages['starting']:
-            draw_text('Wave '+str(wave_number), humongous_font_arial, WHITE,
+            draw_text('Wave '+str(wave_number), humongous_font_gothikka, WHITE,
                       canvas, SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2 - 100)
         elif stage == stages['fighting']:
-            draw_text('Wave '+str(wave_number), font_arial_bold, WHITE,
-                      canvas, SCREEN_SIZE[0]//2, 10)
+            draw_text('Wave '+str(wave_number), font_gothikka_bold, WHITE,
+                      canvas, SCREEN_SIZE[0]//2, 0)
             if boss_fight:
-                draw_text('Golem', font_arial_bold, WHITE,
+                draw_text('Golem', font_gothikka_bold, WHITE,
                           canvas, SCREEN_SIZE[0]-35, 30)
         elif stage == stages['ending']:
-            draw_text('Wave '+str(wave_number) + ' completed', humongous_font_arial, WHITE,
+            draw_text('Wave '+str(wave_number) + ' completed', humongous_font_gothikka, WHITE,
                       canvas, SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2 - 100)
 
-        draw_text('You', font_arial_bold, WHITE,
+        draw_text('You', font_gothikka_bold, WHITE,
                   canvas, 20, 30)
         if paused:
             canvas.blit(dim_screen, (0, 0))
-            draw_text('PAUSED', humongous_font_arial, WHITE,
+            draw_text('PAUSED', humongous_font_gothikka, WHITE,
                       canvas, SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2)
         # print(
         #     f'{enemies_to_defeat, len(mobs)} & {total_mobs_per_wave} & {len(entities)} & {remaining_mobs}')
-        player.draw_cooldowns(canvas, font_arial_bold_numbers)
+        player.draw_cooldowns(canvas, font_gothikka_bold_numbers)
 
         window.blit(canvas, (0, 0))
         pygame.display.update()
@@ -445,6 +452,8 @@ def main_menu():
                 if event.key == K_ESCAPE:
                     pygame.quit()
                     sys.exit()
+                if event.key == K_m:
+                    music_handler.toggle()
 
         mx, my = pygame.mouse.get_pos()
         if game_button.draw(canvas):
@@ -475,14 +484,14 @@ def main_menu():
             toggle_audio_button.image = pygame.image.load(
                 'data/images/button/new/audio_on.png').convert_alpha()
 
-        draw_text('Start new game', font_arial, WHITE,
-                  canvas, SCREEN_SIZE[0]//2, 100 + 10)
-        draw_text('Controls', font_arial, WHITE,
-                  canvas, SCREEN_SIZE[0]//2, 200 + 10)
-        draw_text('Credits', font_arial, WHITE,
-                  canvas, SCREEN_SIZE[0]//2, 300 + 10)
-        draw_text('Quit', font_arial, WHITE,
-                  canvas, SCREEN_SIZE[0]//2, 400 + 10)
+        draw_text('Start new game', font_gothikka, WHITE,
+                  canvas, SCREEN_SIZE[0]//2, 100 + 12)
+        draw_text('Controls', font_gothikka, WHITE,
+                  canvas, SCREEN_SIZE[0]//2, 200 + 12)
+        draw_text('Credits', font_gothikka, WHITE,
+                  canvas, SCREEN_SIZE[0]//2, 300 + 12)
+        draw_text('Quit', font_gothikka, WHITE,
+                  canvas, SCREEN_SIZE[0]//2, 400 + 12)
         window.blit(canvas, (0, 0))
         pygame.display.update()
 
@@ -498,35 +507,45 @@ def controls():
             if event.type == KEYDOWN:
                 if event.key == K_ESCAPE:
                     running = False
+                if event.key == K_m:
+                    music_handler.toggle()
 
-        draw_text('Move up', font_arial, WHITE,
-                  canvas, SCREEN_SIZE[0]//2 - 100, 100-10)
-        draw_text('W or Arrow up', font_arial_smaller, WHITE,
+        draw_text('Move up', font_gothikka, WHITE,
+                  canvas, SCREEN_SIZE[0]//2 - 100, 100)
+        draw_text('W or Arrow up', font_gothikka_smaller, WHITE,
                   canvas, SCREEN_SIZE[0]//2 + 100, 100)
-        draw_text('Move down', font_arial, WHITE,
-                  canvas, SCREEN_SIZE[0]//2 - 100, 150-10)
-        draw_text('S or Arrow down', font_arial_smaller, WHITE,
+        draw_text('Move down', font_gothikka, WHITE,
+                  canvas, SCREEN_SIZE[0]//2 - 100, 150)
+        draw_text('S or Arrow down', font_gothikka_smaller, WHITE,
                   canvas, SCREEN_SIZE[0]//2 + 100, 150)
-        draw_text('Move left', font_arial, WHITE,
-                  canvas, SCREEN_SIZE[0]//2 - 100, 200-10)
-        draw_text('A or Arrow left', font_arial_smaller, WHITE,
+        draw_text('Move left', font_gothikka, WHITE,
+                  canvas, SCREEN_SIZE[0]//2 - 100, 200)
+        draw_text('A or Arrow left', font_gothikka_smaller, WHITE,
                   canvas, SCREEN_SIZE[0]//2 + 100, 200)
-        draw_text('Move right', font_arial, WHITE,
-                  canvas, SCREEN_SIZE[0]//2 - 100, 250-10)
-        draw_text('D or Arrow right', font_arial_smaller, WHITE,
+        draw_text('Move right', font_gothikka, WHITE,
+                  canvas, SCREEN_SIZE[0]//2 - 100, 250)
+        draw_text('D or Arrow right', font_gothikka_smaller, WHITE,
                   canvas, SCREEN_SIZE[0]//2 + 100, 250)
-        draw_text('Cast fireball', font_arial, WHITE,
-                  canvas, SCREEN_SIZE[0]//2 - 100, 300-10)
-        draw_text('SPACE', font_arial_smaller, WHITE,
+        draw_text('Cast fireball', font_gothikka, WHITE,
+                  canvas, SCREEN_SIZE[0]//2 - 100, 300)
+        draw_text('SPACE', font_gothikka_smaller, WHITE,
                   canvas, SCREEN_SIZE[0]//2 + 100, 300)
-        draw_text('Melee attack', font_arial, WHITE,
-                  canvas, SCREEN_SIZE[0]//2 - 100, 350-10)
-        draw_text('F', font_arial_smaller, WHITE,
+        draw_text('Melee attack', font_gothikka, WHITE,
+                  canvas, SCREEN_SIZE[0]//2 - 100, 350)
+        draw_text('F', font_gothikka_smaller, WHITE,
                   canvas, SCREEN_SIZE[0]//2 + 100, 350)
-        draw_text('Return to menu', font_arial, WHITE,
-                  canvas, SCREEN_SIZE[0]//2 - 100, 400-10)
-        draw_text('Escape', font_arial_smaller, WHITE,
+        draw_text('Pause game', font_gothikka, WHITE,
+                  canvas, SCREEN_SIZE[0]//2 - 100, 400)
+        draw_text('P', font_gothikka_smaller, WHITE,
                   canvas, SCREEN_SIZE[0]//2 + 100, 400)
+        draw_text('Mute/Unmute sound', font_gothikka, WHITE,
+                  canvas, SCREEN_SIZE[0]//2 - 100, 450)
+        draw_text('M', font_gothikka_smaller, WHITE,
+                  canvas, SCREEN_SIZE[0]//2 + 100, 450)
+        draw_text('Return to menu', font_gothikka, WHITE,
+                  canvas, SCREEN_SIZE[0]//2 - 100, 500)
+        draw_text('Escape', font_gothikka_smaller, WHITE,
+                  canvas, SCREEN_SIZE[0]//2 + 100, 500)
         window.blit(canvas, (0, 0))
         pygame.display.update()
 
@@ -542,8 +561,10 @@ def show_credits():
             if event.type == KEYDOWN:
                 if event.key == K_ESCAPE:
                     running = False
+                if event.key == K_m:
+                    music_handler.toggle()
 
-        draw_text('Credits', font_arial_big, WHITE,
+        draw_text('Credits', font_gothikka_big, WHITE,
                   canvas, SCREEN_SIZE[0]//2, 100-10)
 
         window.blit(canvas, (0, 0))
