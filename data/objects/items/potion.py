@@ -16,9 +16,30 @@ class Potion(Item):
         if target.health_points == target.max_hp:
             return
         else:
-            potion_sound.play()
             if target.health_points + self.points_to_restore >= target.max_hp:
                 target.health_points = target.max_hp
             elif target.health_points + self.points_to_restore < target.max_hp:
                 target.health_points += self.points_to_restore
             items.pop(items.index(self))
+
+    def regenerate_mana(self, target, items):
+        target.regenerate_mana(20)
+        items.pop(items.index(self))
+
+    def boost(self, target, items, time):
+        target.boosted_timer = time
+        if target.power_icon in target.effects:
+            pass
+        else:
+            target.effects.append(target.power_icon)
+            target.boosted = True
+        items.pop(items.index(self))
+
+    def invulnerability(self, target, items, time):
+        target.invulnerability_timer = time
+        if target.invulnerability_icon in target.effects:
+            pass
+        else:
+            target.effects.append(target.invulnerability_icon)
+            target.invulnerability = True
+        items.pop(items.index(self))

@@ -62,7 +62,7 @@ stages = {'tutorial': 'tutorial', 'starting': 'starting',
           'fighting': 'fighting', 'ending': 'ending'}
 tutorial_stages = ['movement', 'attacks', 'game', 'pause']
 
-tutorial = True
+tutorial = False
 paused = False
 clickable = True
 stage_loading_time = 200
@@ -308,20 +308,26 @@ def game():
                         or pressed_keys[K_LEFT] or pressed_keys[K_RIGHT] or pressed_keys[K_UP] or pressed_keys[K_DOWN]) and player.init_state and player.state != player.states['HURTING']:
                     player.state = player.states['RUNNING']
 
-                if pressed_keys[K_SPACE] and current_time - player.range_attack_time > player.cooldowns['range']:
+                if pressed_keys[K_SPACE] and player.mana_points >= player.mana_costs['fireball'] and current_time - player.fireball_time > player.cooldowns['range']:
+                    player.casting = 'fireball'
+                    if player.state == 'RUNNING':
+                        player.state = player.states['RUNNING-FIRING']
+                    else:
+                        player.state = player.states['FIRING']
+                elif pressed_keys[K_c] and player.mana_points >= player.mana_costs['lightning'] and current_time - player.lightning_time > player.cooldowns['lightning']:
+                    player.casting = 'lightning'
                     if player.state == 'RUNNING':
                         player.state = player.states['RUNNING-FIRING']
                     else:
                         player.state = player.states['FIRING']
 
                 if pressed_keys[K_f] and current_time - player.melee_attack_time > player.cooldowns['melee']:
-
                     if player.state == 'RUNNING':
                         player.state = player.states['RUNNING-ATTACKING']
                     else:
                         player.state = player.states['ATTACKING']
 
-                if not pressed_keys.count(1) and player.state != player.states['HURTING'] and player.state != player.states['DYING'] and player.init_state:
+                if not pressed_keys.count(1) and player.state != player.states['HURTING'] and player.state != player.states['DYING']:
                     player.state = player.states['IDLING']
 
                 movement.normalize()
@@ -344,20 +350,28 @@ def game():
 
             for mob in mobs.copy():
                 if not mob.is_alive and mob.init_state:
-                    if random.random() > 0.85:
-                        items.append(Potion(50, 'potion',
-                                            entity.hitbox.center, 32, 32))
+                    if random.random() > 0.01:
+                        new_potion = Potion(50, random.choice(['power', 'health', 'mana', 'invulnerability']),
+                                            mob.hitbox.center, 32, 32)
+                        items.append(new_potion)
                     mobs.pop(mobs.index(mob))
             for entity in entities.copy():
                 if not entity.is_alive and entity.init_state and entity.type != 'player':
                     if entity.type == 'mob':
                         enemies_to_defeat -= 1
-
                     entities.pop(entities.index(entity))
 
             items_collisions = check_collision(player.hitbox, items)
             for item in items_collisions:
-                item.heal(player, items)
+                if item.name == 'health':
+                    item.heal(player, items)
+                elif item.name == 'mana':
+                    item.regenerate_mana(player, items)
+                elif item.name == 'power':
+                    item.boost(player, items, current_time)
+                elif item.name == 'invulnerability':
+                    item.invulnerability(player, items, current_time)
+                potion_sound.play()
             camera.scroll()
         canvas.blit(background, (int(0 - camera.offset.x +
                                      camera.CONST[0]), int(0 - camera.offset.y + camera.CONST[1])))
@@ -367,8 +381,6 @@ def game():
         for entity in entities:
             entity.draw(canvas, camera.offset.x, camera.offset.y, player)
 
-        canvas.blit(front_decor, (int(0 - camera.offset.x +
-                                      camera.CONST[0]), int(0 - camera.offset.y + camera.CONST[1])))
         if stage == stages['tutorial']:
             canvas.blit(tutorial_text, (0, SCREEN_SIZE[1] - 100))
 
@@ -410,21 +422,18 @@ def game():
                       canvas, SCREEN_SIZE[0]//2, 0)
             if boss_fight:
                 draw_text('Golem', font_gothikka_bold, WHITE,
-                          canvas, SCREEN_SIZE[0]-35, 30)
+                          canvas, SCREEN_SIZE[0]-35, 35)
         elif stage == stages['ending']:
             draw_text('Wave '+str(wave_number) + ' completed', humongous_font_gothikka, WHITE,
                       canvas, SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2 - 100)
 
-        draw_text('You', font_gothikka_bold, WHITE,
-                  canvas, 20, 30)
+        canvas.blit(front_decor, (int(0 - camera.offset.x +
+                                      camera.CONST[0]), int(0 - camera.offset.y + camera.CONST[1])))
+        player.draw_cooldowns(canvas, font_gothikka_bold_numbers)
         if paused:
             canvas.blit(dim_screen, (0, 0))
             draw_text('PAUSED', humongous_font_gothikka, WHITE,
                       canvas, SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2)
-        # print(
-        #     f'{enemies_to_defeat, len(mobs)} & {total_mobs_per_wave} & {len(entities)} & {remaining_mobs}')
-        player.draw_cooldowns(canvas, font_gothikka_bold_numbers)
-
         window.blit(canvas, (0, 0))
         pygame.display.update()
 

@@ -200,5 +200,23 @@ def load_projectile_animations():
     return projectile_animations
 
 
+def load_spells_animations():
+    animation_types = ['lightning']
+    spells_animations = []
+    for animation in animation_types:
+        temp_list = []
+        if os.path.isdir(f'data/images/spells/{animation}'):
+            num_of_frames = len(os.listdir(
+                f'data/images/spells/{animation}'))
+
+            for i in range(num_of_frames):
+                img = pygame.image.load(
+                    f'data/images/spells/{animation}/{i}.png')
+                temp_list.append(img)
+            spells_animations.append(temp_list)
+    return spells_animations
+
+
 entities_animation_list = load_entity_animations()
 projectiles_animation_list = load_projectile_animations()
+spells_animation_list = load_spells_animations()

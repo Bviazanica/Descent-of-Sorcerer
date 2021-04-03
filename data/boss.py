@@ -42,7 +42,8 @@ class Boss():
             (self.rect.x + self.hitbox_x_offset, self.rect.y + self.hitbox_y_offset, self.rect.width, self.rect.height))
 
         # cooldown on abilities
-        self.cooldowns = {'summon': 17000, 'whirlwind': 11000, 'orbs': 1700}
+        self.cooldowns = {'summon': 17000,
+                          'whirlwind': 10000, 'orbs': 1700}
         self.whirlwind_activation_time = self.orbs_activation_time = self.summon_activation_time = -100000
         # speed
         self.speed = 200
@@ -50,7 +51,7 @@ class Boss():
         self.max_hp = 250
         self.health_points = 250
 
-        self.hp_bar_width = 350
+        self.hp_bar_width = 300
 
         self.whirlwind_damage = 30
         self.projectile_damage = 25
@@ -92,7 +93,6 @@ class Boss():
                 self.flip = False
 
             if self.state == 'APPEARING':
-                print('tu :D')
                 self.go_to = Vector2(
                     self.desired_appear.x - self.rect.centerx, self.desired_appear.y - self.rect.centery)
                 self.set_action(Animation_type.Falling)
@@ -106,7 +106,6 @@ class Boss():
                     self.hitbox.x = self.rect.x + self.hitbox_x_offset
                     self.hitbox.y = self.rect.y + self.hitbox_y_offset
                 else:
-                    print('davam na idle')
                     self.state = self.states['IDLING']
                     self.set_action(Animation_type.Idle_Blinking)
                     self.init_state = True
@@ -119,8 +118,7 @@ class Boss():
                         self.timeout = 0
                         self.state = self.states['ATTACKING']
                 if not self.ready_to_attack and self.init_state:
-                    print(
-                        f'{get_entity_count(new_entities, "mob") == 0} & {self.update_time - self.summon_activation_time > self.cooldowns["summon"]}')
+
                     if get_entity_count(new_entities, 'mob') == 0 and self.update_time - self.summon_activation_time > self.cooldowns['summon']:
                         self.state = self.states['SUMMONING']
                     elif self.update_time - self.orbs_activation_time > self.cooldowns['orbs']:
@@ -164,8 +162,6 @@ class Boss():
 
                 else:
                     projectile.update(self.update_time, tick, self.projectiles)
-
-        print(f'{self.state} & {self.init_state} & {self.action} & {self.frame_index} & {self.ready_to_attack, self.ready_to_fire}')
 
     def draw(self, display, offset_x, offset_y, player):
         display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
