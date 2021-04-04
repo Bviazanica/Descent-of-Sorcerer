@@ -4,6 +4,7 @@ import pygame
 import random
 from data.utility import *
 from pygame.locals import *
+from data.decoy import Decoy
 from data.globals.globals import *
 from data.lightning import Lightning
 from data.projectile import Projectile
@@ -30,9 +31,7 @@ class Player():
         self.animation_list = entities_animation_list[self.entity_id]
 
         # local update time for animations
-        self.update_time = 0
-
-        self.animation_time = 0
+        self.update_time = self.decoy_time = self.blizzard_time = self.animation_time = 0
         # image properties
         self.flip = False
         self.image = self.animation_list[self.action][self.frame_index]
@@ -68,10 +67,11 @@ class Player():
 
         self.facing_positive = True
         # cooldowns
-        self.cooldowns = {'melee': 2000, 'range': 1000,
-                          'lightning': 1000}
+        self.cooldowns = {'melee': 2000, 'fireball': 1000,
+                          'lightning': 1000, 'decoy': 2000, 'blizzard': 30000}
         # mana costs
-        self.mana_costs = {'fireball': 15, 'lightning': 50}
+        self.mana_costs = {'fireball': 15,
+                           'lightning': 50, 'decoy': 50, 'blizzard': 150}
         # player cooldownsdd
         self.melee_attack_time = self.fireball_time = self.lightning_time = -100000
         # attack damage
@@ -83,6 +83,7 @@ class Player():
         # spells
         self.lightnings = []
 
+        self.new_entities = []
         # projectiles
         self.projectiles = []
         self.projectile_damage = 5
@@ -110,7 +111,7 @@ class Player():
         self.death_screen_ready = False
         self.ready_to_fire = True
         self.ready_to_attack = True
-
+        self.entities_summoned = False
         self.casting = ''
 
     # update position
@@ -168,7 +169,7 @@ class Player():
                 if len(collision_list) and not projectile.destroy:
                     projectile.destroy = True
                     for col in collision_list:
-                        if not col.state == col.states['APPEARING']:
+                        if col.type == 'decoy' or not col.state == col.states['APPEARING']:
                             col.hit(projectile.damage)
                             fireball_hit_sound.play()
                     projectile.update(self.update_time, time,
@@ -238,12 +239,12 @@ class Player():
             x += 40
 
     def draw_cooldowns(self, display, font):
-        if get_cooldown_ready(self.fireball_time, self.cooldowns['range'],  self.update_time):
+        if get_cooldown_ready(self.fireball_time, self.cooldowns['fireball'],  self.update_time):
             pygame.draw.circle(display, GREEN, (25, SCREEN_SIZE[1]-25), 20)
             display.blit(self.fireball_icon, (5, SCREEN_SIZE[1]-35))
         else:
             pygame.draw.circle(display, RED, (25, SCREEN_SIZE[1]-25), 20)
-            draw_text(str(abs(self.update_time-self.fireball_time-self.cooldowns['range'])//1000), font, WHITE,
+            draw_text(str(abs(self.update_time-self.fireball_time-self.cooldowns['fireball'])//1000), font, WHITE,
                       display, 25, SCREEN_SIZE[1]-40)
 
         if get_cooldown_ready(self.melee_attack_time, self.cooldowns['melee'], self.update_time):
@@ -300,12 +301,17 @@ class Player():
 
         if (self.action == int(Animation_type.Throwing_in_The_Air) or self.action == int(Animation_type.Run_Throwing)) and self.frame_index == 2 and self.ready_to_fire:
             if self.casting == 'fireball':
-                self.fire()
+                self.cast_fireball()
                 self.ready_to_fire = False
             elif self.casting == 'lightning':
                 self.cast_lightning()
                 self.ready_to_fire = False
-
+            elif self.casting == 'decoy':
+                self.cast_decoy()
+                self.ready_to_fire = False
+            elif self.casting == 'blizzard':
+                self.cast_blizzard()
+                self.ready_to_fire = False
         # out of images - resets
         if self.frame_index >= len(self.animation_list[self.action]):
             if self.action == int(Animation_type.Dying):
@@ -349,12 +355,12 @@ class Player():
         collision_list = check_collision(attack, new_entities)
         if len(collision_list):
             for col in collision_list:
-                if not col.state == col.states['APPEARING']:
+                if col.type == 'decoy' or not col.state == col.states['APPEARING']:
                     col.hit(self.melee_damage)
                     bonk_sound.play()
             self.regenerate_mana(20)
 
-    def fire(self):
+    def cast_fireball(self):
         random.choice([fireball_cast_sound, fireball_cast2_sound]).play()
         self.fireball_time = self.update_time
         if self.facing_positive:
@@ -387,6 +393,28 @@ class Player():
         self.mana_points -= self.mana_costs['lightning']
         self.ready_to_fire = False
 
+    def cast_decoy(self):
+        self.decoy_time = self.update_time
+        self.new_entities.clear()
+        if self.facing_positive:
+            direction = 1
+            decoy = Decoy(
+                Vector2(self.hitbox.x + self.rect.w - self.hitbox_x_offset, self.rect.y), self.facing_positive)
+        else:
+            direction = -1
+            decoy = Decoy(
+                Vector2(self.hitbox.x - self.hitbox_x_offset - self.rect.w, self.rect.y), self.facing_positive)
+
+        self.entities_summoned = True
+        self.new_entities.append(decoy)
+        self.mana_points -= self.mana_costs['decoy']
+        self.ready_to_fire = False
+
+    def cast_blizzard(self):
+        self.blizzard_time = self.update_time
+        self.mana_points -= self.mana_costs['blizzard']
+        self.ready_to_fire = False
+
     def state_running_attacking(self, new_entities):
         if self.init_state:
             self.init_state = False
@@ -403,3 +431,6 @@ class Player():
             self.mana_points = self.max_mp
         if amount + self.mana_points < self.max_mp:
             self.mana_points += amount
+
+    def get_summoned_entities(self):
+        return self.new_entities

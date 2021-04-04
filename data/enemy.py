@@ -44,10 +44,11 @@ class Enemy():
         self.hitbox = pygame.Rect(
             (self.rect.x + self.hitbox_x_offset, self.rect.y + self.hitbox_y_offset, self.rect.width, self.rect.height))
         # hp
-        self.max_hp = 100
-        self.health_points = 100
+        self.max_hp = 2000
+        self.health_points = 2000
         self.hp_bar_width = self.rect.w
 
+        self.min_distance = 0
         # speed
         self.speed = 200
         self.acceleration = Vector2(0, 0)
@@ -87,11 +88,13 @@ class Enemy():
         self.vector2 = Vector2(0, 0)
         self.go_to = Vector2(0, 0)
 
-    def update(self, time_passed, tick, player, mobs, stage, boss):
+    def update(self, time_passed, tick, player, mobs, stage, boss, entities):
         self.local_time = time_passed
         self.update_animation()
-        if self.is_alive:
+        new_targets = list(filter(lambda x: x.type ==
+                                  'player' or x.type == 'decoy', entities))
 
+        if self.is_alive:
             if self.state == 'APPEARING':
                 self.speed = 120
                 self.go_to = Vector2(
@@ -111,16 +114,16 @@ class Enemy():
             else:
                 if self.state == 'SEEKING':
                     self.acceleration += self.state_seeking(
-                        tick, player)
+                        tick, new_targets)
                 elif self.state == 'HUNTING':
                     self.acceleration += self.state_hunting(
-                        tick, player)
+                        tick, player, new_targets)
                 elif self.state == 'FLEE':
                     self.acceleration += self.state_flee(tick,
                                                          player, boss)
                 elif self.state == 'SACRIFICE':
                     self.acceleration += self.state_sacrifice(
-                        tick, player, boss)
+                        tick, boss)
                 if self.init_state:
                     if self.state == 'HURTING':
                         self.init_state = False
@@ -175,7 +178,7 @@ class Enemy():
                                                                                                                                     offset_y), 5)
 
     def hit(self, damage):
-        if self.health_points - damage <= 0:
+        if self.health_points - damage <= 0 and self.state != self.states['DYING']:
             self.is_alive = False
             self.state = self.states['DYING']
             self.health_points = 0
@@ -191,7 +194,7 @@ class Enemy():
             self.health_points -= damage
             self.init_state = True
 
-    def state_seeking(self, time, player):
+    def state_seeking(self, time, new_entities):
         if self.init_state:
             self.heading = pygame.Rect(
                 randint(-268, 746), randint(-380, 1500), 1, 1)
@@ -199,9 +202,11 @@ class Enemy():
             self.set_action(Animation_type.Walking)
             self.init_state = False
 
-        if is_close(self.hitbox, player.hitbox, 200) or not self.health_points == self.max_hp:
-            self.init_state = True
-            self.state = self.states['HUNTING']
+        for target in new_entities:
+            if is_close(self.hitbox, target.hitbox, 200) or not self.health_points == self.max_hp:
+                self.init_state = True
+                self.state = self.states['HUNTING']
+                break
 
         if self.local_time - self.new_destination_time > self.cooldowns['new_destination']:
             self.new_destination_time = self.local_time
@@ -209,23 +214,42 @@ class Enemy():
 
         return self.seek_with_approach(self.heading.center, time)
 
-    def state_hunting(self, time, player):
+    def state_hunting(self, time, player, new_targets):
         if self.init_state:
             self.speed = 150
             self.set_action(Animation_type.Running)
             self.init_state = False
 
-        if is_close(self.hitbox, player.hitbox, 50):
+        #player or decoy
+        # ak je blizko decoy, zamera ten, ak nie, zamera hraca
+        # vzdy prednost decoyu v okruhu 200px
+
+        new_distance = Vector2(
+            player.hitbox.centerx - self.hitbox.centerx, player.hitbox.centery - self.hitbox.centery)
+        self.min_distance = new_distance.length()
+        new_target = player
+        new_targets = list(filter(lambda x: x.type == 'decoy', new_targets))
+        if len(new_targets):
+            for target in new_targets:
+                if is_close(self.hitbox, target.hitbox, 200) and new_target == player:
+                    new_distance = Vector2(
+                        target.hitbox.centerx - self.hitbox.centerx, target.hitbox.centery - self.hitbox.centery)
+                    if new_distance.length() < self.min_distance:
+                        self.min_distance = new_distance.length()
+                        new_target = target
+
+        if is_close(self.hitbox, new_target.hitbox, 50):
             self.set_action(Animation_type.Walking)
             if self.local_time - self.attack_time > self.cooldowns['attack']:
                 self.attack_time = self.local_time
                 self.state = self.states['ATTACKING']
                 self.set_action(Animation_type.Kicking)
                 self.init_state = False
-                player.hit(self.damage)
+                new_target.hit(self.damage)
         else:
             self.set_action(Animation_type.Running)
-        return self.seek_with_approach(player.hitbox.center, time)
+
+        return self.seek_with_approach(new_target.hitbox.center, time)
 
     def state_flee(self, tick, player, boss):
         if self.init_state:
@@ -241,7 +265,7 @@ class Enemy():
 
         return self.flee(player.hitbox, tick)
 
-    def state_sacrifice(self, tick, player, boss):
+    def state_sacrifice(self, tick, boss):
         if self.init_state:
             self.speed = 70
             self.set_action(Animation_type.Walking)

@@ -14,13 +14,13 @@ class Potion(Item):
 
     def heal(self, target, items):
         if target.health_points == target.max_hp:
-            return
+            pass
         else:
             if target.health_points + self.points_to_restore >= target.max_hp:
                 target.health_points = target.max_hp
             elif target.health_points + self.points_to_restore < target.max_hp:
                 target.health_points += self.points_to_restore
-            items.pop(items.index(self))
+        items.pop(items.index(self))
 
     def regenerate_mana(self, target, items):
         target.regenerate_mana(20)

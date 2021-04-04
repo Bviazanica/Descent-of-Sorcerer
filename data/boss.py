@@ -204,7 +204,7 @@ class Boss():
             self.health_points = self.max_hp
 
     def hit(self, damage):
-        if self.health_points - damage <= 0:
+        if self.health_points - damage <= 0 and self.state != self.states['DYING']:
             self.is_alive = False
             self.state = self.states['DYING']
             self.set_action(Animation_type.Dying)

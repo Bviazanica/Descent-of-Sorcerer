@@ -114,7 +114,7 @@ def get_entity_count(entities, entity_type):
 def get_entities_to_avoid(entities):
     new_entities = []
     for entity in entities:
-        if entity.type != 'player':
+        if entity.type != 'player' and entity.type != 'decoy':
             new_entities.append(entity)
     return new_entities
 
@@ -141,18 +141,12 @@ def draw_text(text, font, color, surface, x, y):
 
 def load_entity_animations():
     animation_types = ['Dying', 'Hurt', 'Idle', 'Idle Blinking', 'Kicking', 'Run Slashing', 'Run Throwing',
-                       'Running', 'Slashing', 'Slashing in The Air', 'Throwing', 'Throwing in The Air', 'Walking', 'Summoning', 'Falling']
+                       'Running', 'Slashing', 'Slashing in The Air', 'Throwing', 'Throwing in The Air', 'Walking', 'Summoning', 'Falling', 'Exploding']
     entity_types = ['player', 'boss', 'mob']
 
     list_of_loaded_animations = []
     for entity_type in entity_types:
         entity_animations = []
-        if entity_type == 'player':
-            w = h = 120
-        elif entity_type == 'mob':
-            w = h = 100
-        elif entity_type == 'boss':
-            w = h = 200
         # load all images for the players
         for animation in animation_types:
             # reset temporary list of images
@@ -166,7 +160,6 @@ def load_entity_animations():
                     # print(f'{entity_type} & {animation} - {i}')
                     img = pygame.image.load(
                         f'data/images/entities/{entity_type}/{animation}/new/{i}.png')
-                    img = pygame.transform.scale(img, (w, h))
                     temp_list.append(img)
 
                 entity_animations.append(temp_list)

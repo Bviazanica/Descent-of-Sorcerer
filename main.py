@@ -308,7 +308,7 @@ def game():
                         or pressed_keys[K_LEFT] or pressed_keys[K_RIGHT] or pressed_keys[K_UP] or pressed_keys[K_DOWN]) and player.init_state and player.state != player.states['HURTING']:
                     player.state = player.states['RUNNING']
 
-                if pressed_keys[K_SPACE] and player.mana_points >= player.mana_costs['fireball'] and current_time - player.fireball_time > player.cooldowns['range']:
+                if pressed_keys[K_SPACE] and player.mana_points >= player.mana_costs['fireball'] and current_time - player.fireball_time > player.cooldowns['fireball']:
                     player.casting = 'fireball'
                     if player.state == 'RUNNING':
                         player.state = player.states['RUNNING-FIRING']
@@ -320,7 +320,18 @@ def game():
                         player.state = player.states['RUNNING-FIRING']
                     else:
                         player.state = player.states['FIRING']
-
+                elif pressed_keys[K_v] and player.mana_points >= player.mana_costs['decoy'] and current_time - player.decoy_time > player.cooldowns['decoy']:
+                    player.casting = 'decoy'
+                    if player.state == 'RUNNING':
+                        player.state = player.states['RUNNING-FIRING']
+                    else:
+                        player.state = player.states['FIRING']
+                elif pressed_keys[K_b] and player.mana_points >= player.mana_costs['blizzard'] and current_time - player.blizzard_time > player.cooldowns['blizzard']:
+                    player.casting = 'blizzard'
+                    if player.state == 'RUNNING':
+                        player.state = player.states['RUNNING-FIRING']
+                    else:
+                        player.state = player.states['FIRING']
                 if pressed_keys[K_f] and current_time - player.melee_attack_time > player.cooldowns['melee']:
                     if player.state == 'RUNNING':
                         player.state = player.states['RUNNING-ATTACKING']
@@ -332,9 +343,15 @@ def game():
 
                 movement.normalize()
             for entity in entities:
-                if entity.type == 'player':
+                if entity.type == 'decoy':
+                    entity.update(current_time, entities)
+                elif entity.type == 'player':
                     entity.update(current_time, time_passed_seconds, movement,
                                   entities, stage)
+                    if entity.entities_summoned:
+                        new_decoys = entity.get_summoned_entities()
+                        entities.extend(new_decoys)
+                        entity.entities_summoned = False
                 elif entity.type == 'boss':
                     entity.update(player, current_time, time_passed_seconds, movement,
                                   entities, Enemy, stage, wave_number, start_upgrade_after_wave)
@@ -346,11 +363,11 @@ def game():
                         entity.entities_summoned = False
                 elif entity.type == 'mob':
                     entity.update(current_time, time_passed_seconds, player,
-                                  get_entities_to_avoid(entities), stage, boss)
+                                  get_entities_to_avoid(entities), stage, boss, entities)
 
             for mob in mobs.copy():
                 if not mob.is_alive and mob.init_state:
-                    if random.random() > 0.01:
+                    if random.random() > 0.30:
                         new_potion = Potion(50, random.choice(['power', 'health', 'mana', 'invulnerability']),
                                             mob.hitbox.center, 32, 32)
                         items.append(new_potion)

@@ -68,6 +68,7 @@ class Animation_type(IntEnum):
     Walking = 12,
     Summoning = 13,
     Falling = 14,
+    Exploding = 15,
 
 
 class Tutorial_stage(IntEnum):
