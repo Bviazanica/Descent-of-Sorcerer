@@ -4,6 +4,7 @@ import pygame
 from pygame import mixer
 from random import randint
 from pygame.locals import *
+from data.button import Button
 from data.globals.globals import *
 Vector2 = pygame.math.Vector2
 
@@ -24,6 +25,50 @@ def new_list_without_self(self, object_list):
 
 def is_close(object1, object2, distance):
     return math.hypot(object2.centerx-object1.centerx, object2.centery-object1.centery) < float(distance)
+
+
+def show_upgrade_option(skills_list):
+    skills = []
+    num = SCREEN_SIZE[0] // len(skills_list)
+    x = num // 2
+    y = SCREEN_SIZE[1] // 2
+    for skill in skills_list:
+        button = Button(x, y, 'icon', skill)
+        skills.append(button)
+        x += num
+    return skills
+
+
+def upgrade_skill(index, player):
+    if index == 0:
+        player.projectile_damage += 20
+        player.cooldowns['fireball'] -= 250
+        player.mana_costs['fireball'] = 10
+    if index == 1:
+        player.melee_damage += 20
+        player.meele_mana_regeneration += 10
+    if index == 2:
+        player.lightning_damage += 20
+        player.cooldowns['lightning'] -= 1000
+        player.mana_costs['lightning'] -= 10
+    if index == 3:
+        player.decoy_damage += 20
+        player.cooldowns['decoy'] -= 2500
+        player.mana_costs['decoy'] -= 10
+
+
+def reset(self, values_before_boost):
+    self.projectile_damage = (values_before_boost[0])
+    self.melee_damage = (values_before_boost[1])
+    self.lightning_damage = (values_before_boost[2])
+    self.decoy_damage = (values_before_boost[3])
+
+
+def boost_attacks(boost_spells, stacks, target):
+    target.projectile_damage += (boost_spells[0]//5) * stacks
+    target.melee_damage += (boost_spells[1]//5) * stacks
+    target.lightning_damage += (boost_spells[2]//5) * stacks
+    target.decoy_damage += (boost_spells[3]//5) * stacks
 
 
 def summon(object, x, y, number, wave_number, x_to_destination, spawned, start_upgrade_after_wave):

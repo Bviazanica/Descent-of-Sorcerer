@@ -44,8 +44,8 @@ class Enemy():
         self.hitbox = pygame.Rect(
             (self.rect.x + self.hitbox_x_offset, self.rect.y + self.hitbox_y_offset, self.rect.width, self.rect.height))
         # hp
-        self.max_hp = 2000
-        self.health_points = 2000
+        self.max_hp = 100
+        self.health_points = 100
         self.hp_bar_width = self.rect.w
 
         self.min_distance = 0
@@ -148,8 +148,6 @@ class Enemy():
 
         elif self.state == self.states['DYING'] and not self.init_state:
             self.set_action(Animation_type.Dying)
-
-        # print(f'{self.rect, self.acceleration}')
 
     def draw(self, display, offset_x, offset_y, player):
         display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -

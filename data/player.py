@@ -14,7 +14,6 @@ from data.gameobjects.vector2 import Vector2
 class Player():
     def __init__(self, x, y):
         self.type = 'player'
-
         # id
         self.entity_id = 0
 
@@ -22,7 +21,8 @@ class Player():
 
         self.boosted = False
         self.boosted_timer = 0
-
+        self.boosted_stacks = 0
+        self.boosted_attacks_by = []
         self.invulnerability = False
         self.invulnerability_timer = 0
         # animations
@@ -31,7 +31,7 @@ class Player():
         self.animation_list = entities_animation_list[self.entity_id]
 
         # local update time for animations
-        self.update_time = self.decoy_time = self.blizzard_time = self.animation_time = 0
+        self.update_time = self.animation_time = 0
         # image properties
         self.flip = False
         self.image = self.animation_list[self.action][self.frame_index]
@@ -42,19 +42,29 @@ class Player():
         self.effects = []
 
         self.fireball_icon = pygame.image.load(
-            'data/images/icons/new/fireball_icon.png').convert_alpha()
+            'data/images/icons/new/fireball_icon.jpg')
         self.staff_icon = pygame.image.load(
-            'data/images/icons/new/staff.png').convert()
+            'data/images/icons/new/staff_icon.jpg')
         self.lightning_icon = pygame.image.load(
-            'data/images/icons/new/lightning_icon.png').convert_alpha()
+            'data/images/icons/new/lightning_icon.jpg')
+        self.decoy_icon = pygame.image.load(
+            'data/images/icons/new/decoy_icon.jpg')
+        self.spells_icons = [self.fireball_icon, self.staff_icon]
 
         self.invulnerability_icon = pygame.image.load(
-            'data/images/icons/new/invulnerability.png').convert_alpha()
+            'data/images/icons/new/invulnerability_icon.png').convert_alpha()
         self.power_icon = pygame.image.load(
-            'data/images/icons/new/power.png').convert()
+            'data/images/icons/new/power_icon.png').convert()
 
         self.effect_icon_width = self.power_icon.get_width()
         self.effect_icon_height = self.power_icon.get_height()
+
+        self.skill_icon_width = self.fireball_icon.get_width()
+        self.skill_icon_height = self.fireball_icon.get_height()
+
+        self.dim_screen = pygame.Surface((
+            self.skill_icon_width, self.skill_icon_height)).convert_alpha()
+        self.dim_screen.fill((0, 0, 0, 180))
 
         self.rect = self.image.get_rect(width=70, height=80)
         self.rect.center = x, y
@@ -67,26 +77,30 @@ class Player():
 
         self.facing_positive = True
         # cooldowns
-        self.cooldowns = {'melee': 2000, 'fireball': 1000,
-                          'lightning': 1000, 'decoy': 2000, 'blizzard': 30000}
+        self.cooldowns = {'melee': 4000, 'fireball': 2000,
+                          'lightning': 8000, 'decoy': 20000}
         # mana costs
         self.mana_costs = {'fireball': 15,
-                           'lightning': 50, 'decoy': 50, 'blizzard': 150}
+                           'lightning': 50, 'decoy': 50}
         # player cooldownsdd
-        self.melee_attack_time = self.fireball_time = self.lightning_time = -100000
+        self.melee_attack_time = self.fireball_time = self.lightning_time = self.decoy_time = -100000
         # attack damage
-        self.melee_damage = 100
-
+        self.melee_damage = 400
+        self.meele_mana_regeneration = 20
         # speed
         self.speed = 250
 
         # spells
         self.lightnings = []
+        self.decoy_damage = 200
+        self.lightning_damage = 50
 
+        self.lightning_learned = False
+        self.decoy_learned = False
         self.new_entities = []
         # projectiles
         self.projectiles = []
-        self.projectile_damage = 5
+        self.projectile_damage = 100
         self.projectile_speed = 400
 
         # healthpoints
@@ -121,12 +135,6 @@ class Player():
         new_entities = new_list_without_self(self, entities)
         self.update_animation(new_entities)
 
-        if self.init_state or self.state == self.states['HURTING']:
-            if self.facing_positive:
-                self.flip = False
-            else:
-                self.flip = True
-
         if self.is_alive:
             if self.init_state:
                 if self.state == 'IDLING':
@@ -153,7 +161,9 @@ class Player():
             self.regenerate_mana(self.mana_regeneration)
 
             if self.boosted and self.update_time - self.boosted_timer > 5000:
+                reset(self, self.boosted_attacks_by)
                 self.boosted = False
+                self.boosted_stacks = 0
                 if self.power_icon in self.effects:
                     self.effects.pop(self.effects.index(self.power_icon))
             if self.invulnerability and self.update_time - self.invulnerability_timer > 5000:
@@ -187,8 +197,11 @@ class Player():
                 lightning.update(self.update_time,
                                  self.lightnings, new_entities)
 
+        print(f'{self.projectile_damage}')
+
     def move(self, rect, movement, time):
 
+        self.flip = not self.facing_positive
         self.rect.x += movement[0] * time * self.speed
         check_boundaries_for_x(self)
         self.hitbox.x = self.rect.x + self.hitbox_x_offset
@@ -234,34 +247,44 @@ class Player():
         y = 45
         for effect in self.effects:
             pygame.draw.rect(display, BLACK,
-                             (x-1, y, self.effect_icon_width+2, self.effect_icon_height), 1)
+                             (x, y, self.effect_icon_width, self.effect_icon_height), 3)
             display.blit(effect, (x, y))
             x += 40
 
     def draw_cooldowns(self, display, font):
-        if get_cooldown_ready(self.fireball_time, self.cooldowns['fireball'],  self.update_time):
-            pygame.draw.circle(display, GREEN, (25, SCREEN_SIZE[1]-25), 20)
-            display.blit(self.fireball_icon, (5, SCREEN_SIZE[1]-35))
-        else:
-            pygame.draw.circle(display, RED, (25, SCREEN_SIZE[1]-25), 20)
+        x = 5
+        y = SCREEN_SIZE[1]-47
+        for skill in self.spells_icons:
+            display.blit(skill,
+                         (x, y))
+            pygame.draw.rect(display, BLACK,
+                             (x-1, y, self.skill_icon_width+2, self.skill_icon_height), 4)
+
+            x += 50
+
+        if not get_cooldown_ready(self.fireball_time, self.cooldowns['fireball'],  self.update_time):
+            display.blit(self.dim_screen,
+                         (5, y))
             draw_text(str(abs(self.update_time-self.fireball_time-self.cooldowns['fireball'])//1000), font, WHITE,
-                      display, 25, SCREEN_SIZE[1]-40)
+                      display, 26, SCREEN_SIZE[1]-40)
 
-        if get_cooldown_ready(self.melee_attack_time, self.cooldowns['melee'], self.update_time):
-            pygame.draw.circle(display, GREEN, (70, SCREEN_SIZE[1]-25), 20)
-            display.blit(self.staff_icon, (65, SCREEN_SIZE[1]-35))
-        else:
-            pygame.draw.circle(display, RED, (70, SCREEN_SIZE[1]-25), 20)
+        if not get_cooldown_ready(self.melee_attack_time, self.cooldowns['melee'], self.update_time):
+            display.blit(self.dim_screen,
+                         (55, y))
             draw_text(str(abs(self.update_time-self.melee_attack_time-self.cooldowns['melee'])//1000), font, WHITE,
-                      display, 70, SCREEN_SIZE[1]-40)
+                      display, 76, SCREEN_SIZE[1]-40)
 
-        if get_cooldown_ready(self.lightning_time, self.cooldowns['lightning'], self.update_time):
-            pygame.draw.circle(display, GREEN, (115, SCREEN_SIZE[1]-25), 20)
-            display.blit(self.lightning_icon, (100, SCREEN_SIZE[1]-35))
-        else:
-            pygame.draw.circle(display, RED, (115, SCREEN_SIZE[1]-25), 20)
+        if not get_cooldown_ready(self.lightning_time, self.cooldowns['lightning'], self.update_time):
+            display.blit(self.dim_screen,
+                         (105, y))
             draw_text(str(abs(self.update_time-self.lightning_time-self.cooldowns['lightning'])//1000), font, WHITE,
-                      display, 115, SCREEN_SIZE[1]-40)
+                      display, 126, SCREEN_SIZE[1]-40)
+
+        if not get_cooldown_ready(self.decoy_time, self.cooldowns['decoy'], self.update_time):
+            display.blit(self.dim_screen,
+                         (155, y))
+            draw_text(str(abs(self.update_time-self.decoy_time-self.cooldowns['decoy'])//1000), font, WHITE,
+                      display, 176, SCREEN_SIZE[1]-40)
 
     def hit(self, damage):
         if self.invulnerability:
@@ -358,7 +381,7 @@ class Player():
                 if col.type == 'decoy' or not col.state == col.states['APPEARING']:
                     col.hit(self.melee_damage)
                     bonk_sound.play()
-            self.regenerate_mana(20)
+            self.regenerate_mana(self.meele_mana_regeneration)
 
     def cast_fireball(self):
         random.choice([fireball_cast_sound, fireball_cast2_sound]).play()
@@ -382,11 +405,11 @@ class Player():
         if self.facing_positive:
             direction = 1
             lightning = Lightning(
-                Vector2(self.hitbox.x, self.hitbox.centery - 320), 'lightning', 0, direction, Vector2(self.rect.width, self.rect.height))
+                Vector2(self.hitbox.x, self.hitbox.centery - 320), 'lightning', 0, direction, Vector2(self.rect.width, self.rect.height), self.lightning_damage)
         else:
             direction = -1
             lightning = Lightning(
-                Vector2(self.hitbox.x - 250 + self.rect.w, self.hitbox.centery - 320), 'lightning', 0, direction, Vector2(self.rect.width, self.rect.height))
+                Vector2(self.hitbox.x - 250 + self.rect.w, self.hitbox.centery - 320), 'lightning', 0, direction, Vector2(self.rect.width, self.rect.height), self.lightning_damage)
 
         lightning.ready = True
         self.lightnings.append(lightning)
@@ -399,20 +422,15 @@ class Player():
         if self.facing_positive:
             direction = 1
             decoy = Decoy(
-                Vector2(self.hitbox.x + self.rect.w - self.hitbox_x_offset, self.rect.y), self.facing_positive)
+                Vector2(self.hitbox.x + self.rect.w - self.hitbox_x_offset, self.rect.y), self.facing_positive, self.decoy_damage)
         else:
             direction = -1
             decoy = Decoy(
-                Vector2(self.hitbox.x - self.hitbox_x_offset - self.rect.w, self.rect.y), self.facing_positive)
+                Vector2(self.hitbox.x - self.hitbox_x_offset - self.rect.w, self.rect.y), self.facing_positive, self.decoy_damage)
 
         self.entities_summoned = True
         self.new_entities.append(decoy)
         self.mana_points -= self.mana_costs['decoy']
-        self.ready_to_fire = False
-
-    def cast_blizzard(self):
-        self.blizzard_time = self.update_time
-        self.mana_points -= self.mana_costs['blizzard']
         self.ready_to_fire = False
 
     def state_running_attacking(self, new_entities):

@@ -10,21 +10,16 @@ from data.globals.globals import *
 
 
 class Button():
-    def __init__(self, x, y, type):
+    def __init__(self, x, y, type, image):
+        self.image = image
         if type == 'menu':
-            self.image = pygame.image.load(
-                'data/images/button/new/button.png').convert_alpha()
             self.image = pygame.transform.scale(self.image, (200, 100))
             self.rect = self.image.get_rect(width=200, height=50)
             self.hitbox_y_offset = 25
-        elif type == 'audio':
-            self.image = pygame.image.load(
-                'data/images/button/new/audio_on.png').convert_alpha()
+        elif type == 'audio' or type == 'icon':
             self.rect = self.image.get_rect()
             self.hitbox_y_offset = 0
         else:
-            self.image = pygame.image.load(
-                'data/images/button/new/arrow.png').convert_alpha()
             self.rect = self.image.get_rect(width=50, height=50)
             self.hitbox_y_offset = 0
         self.rect.center = (x, y)

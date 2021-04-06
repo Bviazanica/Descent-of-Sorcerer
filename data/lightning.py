@@ -4,7 +4,7 @@ from pygame.locals import *
 
 
 class Lightning():
-    def __init__(self, pos, name, spell_id, direction, offset):
+    def __init__(self, pos, name, spell_id, direction, offset, damage):
         self.name = name
         self.spell_id = spell_id
         self.animation_list = spells_animation_list[self.spell_id]
@@ -17,8 +17,9 @@ class Lightning():
         self.hitbox_x_offset, self.hitbox_y_offset = offset
 
         self.update_time = self.animation_time = 0
+
         self.ready = False
-        self.damage = 60
+        self.damage = damage
         if direction == 1:
             self.hitbox = pygame.Rect(
                 self.rect.x + self.hitbox_x_offset, self.rect.y+self.rect.height-self.hitbox_y_offset, 180, 100)

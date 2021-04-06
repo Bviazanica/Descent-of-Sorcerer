@@ -5,7 +5,7 @@ from data.gameobjects.vector2 import Vector2
 
 
 class Decoy(object):
-    def __init__(self, position, facing_positive):
+    def __init__(self, position, facing_positive, damage):
         self.type = 'decoy'
         self.is_alive = True
         # animations
@@ -34,13 +34,12 @@ class Decoy(object):
         self.hitbox = pygame.Rect(
             (self.rect.x + self.hitbox_x_offset, self.rect.y + self.hitbox_y_offset, self.rect.width, self.rect.height))
 
-        self.explosion_damage = 200
+        self.explosion_damage = damage
         self.states = {'IDLING': 'IDLING',
                        'HURTING': 'HURTING', 'EXPLODING': 'EXPLODING'}
         self.state = self.states['IDLING']
         self.dying_position = Vector2(0, 0)
         self.init_state = True
-
         self.ready_to_explode = False
 
         check_boundaries_for_x(self)
