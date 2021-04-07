@@ -66,6 +66,10 @@ class Player():
             self.skill_icon_width, self.skill_icon_height)).convert_alpha()
         self.dim_screen.fill((0, 0, 0, 180))
 
+        self.mana_dim = pygame.Surface((
+            self.skill_icon_width-5, self.skill_icon_height-5)).convert_alpha()
+        self.mana_dim.fill((0, 191, 255, 180))
+
         self.rect = self.image.get_rect(width=70, height=80)
         self.rect.center = x, y
         # hitbox
@@ -78,10 +82,10 @@ class Player():
         self.facing_positive = True
         # cooldowns
         self.cooldowns = {'melee': 4000, 'fireball': 2000,
-                          'lightning': 8000, 'decoy': 20000}
+                          'lightning': 8000, 'decoy': 5000}
         # mana costs
-        self.mana_costs = {'fireball': 15,
-                           'lightning': 50, 'decoy': 50}
+        self.mana_costs = {'fireball': 30,
+                           'lightning': 75, 'decoy': 120}
         # player cooldownsdd
         self.melee_attack_time = self.fireball_time = self.lightning_time = self.decoy_time = -100000
         # attack damage
@@ -185,7 +189,7 @@ class Player():
                     projectile.update(self.update_time, time,
                                       self.projectiles)
 
-                elif projectile.rect.x > RIGHT_BORDER or projectile.rect.x < LEFT_BORDER:
+                elif projectile.rect.x > RIGHT_BORDER or projectile.rect.x + projectile.rect.w < LEFT_BORDER:
                     self.projectiles.pop(
                         self.projectiles.index(projectile))
 
@@ -196,8 +200,6 @@ class Player():
             for lightning in self.lightnings:
                 lightning.update(self.update_time,
                                  self.lightnings, new_entities)
-
-        print(f'{self.projectile_damage}')
 
     def move(self, rect, movement, time):
 
@@ -222,8 +224,8 @@ class Player():
                 lg.draw(display, offset_x, offset_y)
         display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
                                                                            offset_x, self.rect.y - offset_y))
-        pygame.draw.rect(display, (255, 0, 0), [
-                         self.hitbox.x - offset_x, self.hitbox.y - offset_y, self.rect.width, self.rect.height], 2)
+        # pygame.draw.rect(display, (255, 0, 0), [
+        #                  self.hitbox.x - offset_x, self.hitbox.y - offset_y, self.rect.width, self.rect.height], 2)
 
         pygame.draw.rect(display, BLACK,
                          (4, 4, self.hp_bar_width+2, 22), 1)
@@ -267,6 +269,9 @@ class Player():
                          (5, y))
             draw_text(str(abs(self.update_time-self.fireball_time-self.cooldowns['fireball'])//1000), font, WHITE,
                       display, 26, SCREEN_SIZE[1]-40)
+        elif self.mana_costs['fireball'] > self.mana_points:
+            display.blit(self.mana_dim,
+                         (8, y+3))
 
         if not get_cooldown_ready(self.melee_attack_time, self.cooldowns['melee'], self.update_time):
             display.blit(self.dim_screen,
@@ -279,12 +284,17 @@ class Player():
                          (105, y))
             draw_text(str(abs(self.update_time-self.lightning_time-self.cooldowns['lightning'])//1000), font, WHITE,
                       display, 126, SCREEN_SIZE[1]-40)
-
+        elif self.mana_costs['lightning'] > self.mana_points and self.lightning_learned:
+            display.blit(self.mana_dim,
+                         (108, y+3))
         if not get_cooldown_ready(self.decoy_time, self.cooldowns['decoy'], self.update_time):
             display.blit(self.dim_screen,
                          (155, y))
             draw_text(str(abs(self.update_time-self.decoy_time-self.cooldowns['decoy'])//1000), font, WHITE,
                       display, 176, SCREEN_SIZE[1]-40)
+        elif self.mana_costs['decoy'] > self.mana_points and self.decoy_learned:
+            display.blit(self.mana_dim,
+                         (158, y+3))
 
     def hit(self, damage):
         if self.invulnerability:

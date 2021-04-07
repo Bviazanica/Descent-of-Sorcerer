@@ -52,25 +52,12 @@ lightning_icon = pygame.image.load(
 decoy_icon = pygame.image.load(
     'data/images/icons/new/decoy_big_icon.jpg')
 
-
-# font
-humongous_font_gothikka = pygame.font.Font('data/fonts/Gothikka Bold.ttf', 70)
-humongous_font_gothikka.set_bold(True)
-font_gothikka = pygame.font.Font('data/fonts/Gothikka.ttf', 24)
-font_gothikka.set_bold(True)
-font_gothikka_big = pygame.font.Font('data/fonts/Gothikka Bold.ttf', 54)
-font_gothikka_smaller = pygame.font.Font('data/fonts/Gothikka.ttf', 24)
-font_gothikka_bold = pygame.font.Font('data/fonts/Gothikka Bold.ttf', 30)
-font_gothikka_bold.set_bold(True)
-font_gothikka_bold_numbers = pygame.font.Font(
-    'data/fonts/Gothikka Bold.ttf', 28)
-font_gothikka_bold_numbers.set_bold(True)
 entities = []
 items = []
 mobs = []
 stages = {'tutorial': 'tutorial', 'starting': 'starting',
           'fighting': 'fighting', 'ending': 'ending', 'upgrading': 'upgrading', 'discovering': 'discovering'}
-tutorial_stages = ['movement', 'attacks', 'game', 'pause']
+tutorial_stages = ['movement',  'attacks', 'game', 'pause']
 
 tutorial = True
 paused = False
@@ -111,6 +98,7 @@ def game():
     last_spawned_time = 0
     start_upgrade_after_wave = 5
     remaining_mobs = 0
+    tutorial_text.fill((0, 0, 0, 180))
     boss = []
     amount = 50
     # tutorial
@@ -223,7 +211,10 @@ def game():
                                     pygame.mixer.music.play(-1, 0.0)
                                 clickable = False
 
-                        draw_text('GAME OVER', font_gothikka_big, WHITE,
+                        draw_text('GAME OVER', humongous_font_gothikka, WHITE,
+                                  canvas, SCREEN_SIZE[0]//2, 100)
+
+                        draw_text('You have reached wave '+str(wave_number), font_gothikka_big, WHITE,
                                   canvas, SCREEN_SIZE[0]//2, 200)
                         draw_text('Restart', font_gothikka, WHITE,
                                   canvas, SCREEN_SIZE[0]//2, 300+12)
@@ -238,7 +229,7 @@ def game():
                         stage_loading_time = 5000
                         wave_number += 1
                         boss_fight = False
-                        if wave_number % 5 == 0:
+                        if wave_number % 1 == 0:
                             boss_fight = True
                             amount += 5
                         else:
@@ -260,7 +251,7 @@ def game():
                             entities.append(boss)
                             new_stage = False
                             if spawn_mobs_number < max_spawn_mobs_number:
-                                spawn_mobs_number += 4
+                                spawn_mobs_number += 2
                         if len(mobs) < 1 and not boss.is_alive:
                             stage = stages['ending']
                             new_stage = True
@@ -392,9 +383,9 @@ def game():
 
             for mob in mobs.copy():
                 if not mob.is_alive and mob.init_state:
-                    if random.random() > 0.30:
-                        new_potion = Potion(random.choice(['power']),
-                                            mob.hitbox.center, 32, 32)
+                    if random.random() > 0.85:
+                        new_potion = Potion(random.choice(['invulnerability', 'health', 'mana', 'power']),
+                                            mob.hitbox.midbottom, 32, 32)
                         items.append(new_potion)
                     mobs.pop(mobs.index(mob))
             for entity in entities.copy():
@@ -420,7 +411,17 @@ def game():
 
         for item in items:
             item.draw(canvas, camera.offset.x, camera.offset.y)
-        for entity in entities:
+
+        # sort entities by Y position, from the lowest to highest
+        # entities.sort(key=entities, reverse=...)
+
+        # To return a new list, use the sorted() built-in function...
+        sorted_entities = sorted(
+            entities, key=lambda x: x.hitbox.bottom, reverse=False)
+
+        # zobrat vsetky entity, vytiahnut 'y' kazdeho prvku, dat ich do noveho pola a podla toho drawovat
+
+        for entity in sorted_entities:
             entity.draw(canvas, camera.offset.x, camera.offset.y, player)
 
         if stage == stages['tutorial']:
@@ -442,22 +443,23 @@ def game():
             if new_tutorial_stage:
                 new_tutorial_stage = False
                 if tutorial_stage == tutorial_stages[int(Tutorial_stage.movement)]:
-                    draw_text('Move with W,A,S,D or with arrow keys on your keyboard.', font_gothikka, WHITE,
+                    draw_text('Move with W,A,S,D or with arrow keys on your keyboard', font_gothikka, WHITE,
                               tutorial_text, SCREEN_SIZE[0]//2, 10)
-                if tutorial_stage == tutorial_stages[int(Tutorial_stage.attacks)]:
-
-                    draw_text('You have two abilities, melee and fireball.', font_gothikka, WHITE,
+                elif tutorial_stage == tutorial_stages[int(Tutorial_stage.attacks)]:
+                    draw_text('To cast a fireball press Space', font_gothikka, WHITE,
                               tutorial_text, SCREEN_SIZE[0]//2, 10)
-                    draw_text('Each ability has a cooldown time.', font_gothikka, WHITE,
+                    draw_text('For melee attack press F', font_gothikka, WHITE,
                               tutorial_text, SCREEN_SIZE[0]//2, 35)
-                    draw_text('Melee attacks can hit multiple enemies.', font_gothikka, WHITE,
-                              tutorial_text, SCREEN_SIZE[0]//2, 60)
-                if tutorial_stage == tutorial_stages[int(Tutorial_stage.game)]:
-                    draw_text('Fight your way through waves of enemies to challange the boss.', font_gothikka, WHITE,
+                elif tutorial_stage == tutorial_stages[int(Tutorial_stage.game)]:
+                    draw_text('Fight your way through waves of enemies to challange the boss', font_gothikka, WHITE,
                               tutorial_text, SCREEN_SIZE[0]//2, 10)
-                if tutorial_stage == tutorial_stages[int(Tutorial_stage.pause)]:
+                    draw_text('Beat as many waves as you can', font_gothikka, WHITE,
+                              tutorial_text, SCREEN_SIZE[0]//2, 35)
+                elif tutorial_stage == tutorial_stages[int(Tutorial_stage.pause)]:
                     draw_text('You can pause your game anytime by pressing P', font_gothikka, WHITE,
                               tutorial_text, SCREEN_SIZE[0]//2, 10)
+                    draw_text('You can also mute sounds and music by pressing M or you can do it in main menu', font_gothikka, WHITE,
+                              tutorial_text, SCREEN_SIZE[0]//2, 35)
 
         elif stage == stages['starting']:
             draw_text('Wave '+str(wave_number), humongous_font_gothikka, WHITE,
@@ -465,9 +467,6 @@ def game():
         elif stage == stages['fighting']:
             draw_text('Wave '+str(wave_number), font_gothikka_bold, WHITE,
                       canvas, SCREEN_SIZE[0]//2, 0)
-            if boss_fight:
-                draw_text('Golem', font_gothikka_bold, WHITE,
-                          canvas, SCREEN_SIZE[0]-35, 25)
         elif stage == stages['ending']:
             draw_text('Wave '+str(wave_number) + ' completed', humongous_font_gothikka, WHITE,
                       canvas, SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2 - 100)
@@ -529,10 +528,9 @@ def game():
             else:
                 draw_text('PAUSED', humongous_font_gothikka, WHITE,
                           canvas, SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2)
-        # print(
+        # print(f
         #     f'{player.melee_damage,player.projectile_damage, player.lightning_damage,player.decoy_damage}')
-        # print(
-        #     f'spawn mobs: {spawn_mobs_number} {enemies_to_defeat, }')
+
         window.blit(canvas, (0, 0))
         pygame.display.update()
 

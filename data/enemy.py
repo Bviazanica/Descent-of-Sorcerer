@@ -152,8 +152,8 @@ class Enemy():
     def draw(self, display, offset_x, offset_y, player):
         display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
                                                                            offset_x, self.rect.y - offset_y))
-        pygame.draw.rect(display, (255, 0, 0), [
-                         self.hitbox.x - offset_x, self.hitbox.y - offset_y, self.rect.width, self.rect.height], 2)
+        # pygame.draw.rect(display, (255, 0, 0), [
+        #                  self.hitbox.x - offset_x, self.hitbox.y - offset_y, self.rect.width, self.rect.height], 2)
 
         pygame.draw.rect(display, (255, 0, 0),
                          (self.hitbox.x -

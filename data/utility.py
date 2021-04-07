@@ -229,10 +229,11 @@ def load_projectile_animations():
                 # print(f'{entity_type} & {animation} - {i}')
                 img = pygame.image.load(
                     f'data/images/projectiles/{animation}/{i}.png')
-                if animation == 'fireball' and i < 5:
-                    img = pygame.transform.scale(img, (55, 31))
-                else:
-                    img = pygame.transform.scale(img, (30, 43))
+                if animation == 'fireball':
+                    if i < 5:
+                        img = pygame.transform.scale(img, (55, 31))
+                    else:
+                        img = pygame.transform.scale(img, (30, 43))
                 temp_list.append(img)
             projectile_animations.append(temp_list)
     return projectile_animations

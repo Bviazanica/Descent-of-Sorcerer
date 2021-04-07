@@ -147,6 +147,7 @@ class Boss():
 
         if(self.projectiles):
             for projectile in self.projectiles:
+                print(f'{projectile.rect}')
                 collision_list = check_collision(
                     projectile.rect, new_entities)
                 if len(collision_list) and not projectile.destroy:
@@ -163,10 +164,17 @@ class Boss():
                 else:
                     projectile.update(self.update_time, tick, self.projectiles)
 
+        # print(
+        #     f'SPEED: {self.projectile_speed} DMG: {self.projectile_damage} CD: {self.cooldowns["orbs"]}')
+
     def draw(self, display, offset_x, offset_y, player):
+
         display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
                                                                            offset_x, self.rect.y - offset_y))
 
+        if(self.projectiles):
+            for projectile in self.projectiles:
+                projectile.draw(display, offset_x, offset_y)
         # healthbar
         pygame.draw.rect(display, (0, 0, 0),
                          (SCREEN_SIZE[0] - 6 - self.hp_bar_width, 4, self.hp_bar_width + 2, 22), 1)
@@ -176,9 +184,8 @@ class Boss():
             pygame.draw.rect(display, (255, 0, 0),
                              (SCREEN_SIZE[0] - 5 - healthbar_width, 5, healthbar_width, 20))
 
-        if(self.projectiles):
-            for projectile in self.projectiles:
-                projectile.draw(display, offset_x, offset_y)
+        draw_text('Golem', font_gothikka_bold, WHITE,
+                  display, SCREEN_SIZE[0]-35, 25)
 
     def fire(self, target):
         throw_sound.play()

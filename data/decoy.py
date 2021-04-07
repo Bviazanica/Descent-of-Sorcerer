@@ -104,10 +104,11 @@ class Decoy(object):
             self.frame_index += 1
         if self.frame_index == 3 and self.action == int(Animation_type.Exploding) and self.ready_to_explode:
             self.ready_to_explode = False
-            collision_list = check_collision(self.hitbox, new_entities)
+            collision_list = check_collision(self.rect, new_entities)
             if len(collision_list):
                 for col in collision_list:
                     if col.type == 'player' or col.type == 'decoy' or col.state != col.states['APPEARING']:
+
                         col.hit(self.explosion_damage)
         # out of images - resets
         if self.frame_index >= len(self.animation_list[self.action]):

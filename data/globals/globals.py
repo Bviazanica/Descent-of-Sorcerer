@@ -3,7 +3,21 @@ from enum import IntEnum
 from pygame import mixer
 
 pygame.mixer.pre_init(44100, 16, 2, 4096)
+pygame.init()
 mixer.init()
+
+# font
+humongous_font_gothikka = pygame.font.Font('data/fonts/Gothikka Bold.ttf', 70)
+humongous_font_gothikka.set_bold(True)
+font_gothikka = pygame.font.Font('data/fonts/Gothikka.ttf', 24)
+font_gothikka.set_bold(True)
+font_gothikka_big = pygame.font.Font('data/fonts/Gothikka Bold.ttf', 54)
+font_gothikka_smaller = pygame.font.Font('data/fonts/Gothikka.ttf', 24)
+font_gothikka_bold = pygame.font.Font('data/fonts/Gothikka Bold.ttf', 30)
+font_gothikka_bold.set_bold(True)
+font_gothikka_bold_numbers = pygame.font.Font(
+    'data/fonts/Gothikka Bold.ttf', 28)
+font_gothikka_bold_numbers.set_bold(True)
 
 boss_battle_sound = pygame.mixer.Sound('data/sounds/boss_battle.wav')
 boss_hurt_sound = pygame.mixer.Sound('data/sounds/boss_hurt.wav')
@@ -75,4 +89,4 @@ class Tutorial_stage(IntEnum):
     movement = 0,
     attacks = 1,
     game = 2,
-    pause = 3,
+    pause = 3
