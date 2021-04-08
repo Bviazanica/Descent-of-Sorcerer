@@ -103,6 +103,7 @@ class Decoy(object):
             self.animation_time = self.update_time
             self.frame_index += 1
         if self.frame_index == 3 and self.action == int(Animation_type.Exploding) and self.ready_to_explode:
+            explode_sound.play()
             self.ready_to_explode = False
             collision_list = check_collision(self.rect, new_entities)
             if len(collision_list):

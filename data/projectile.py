@@ -1,4 +1,5 @@
 import pygame
+import random
 from data.utility import *
 from pygame.locals import *
 from data.gameobjects.vector2 import Vector2
@@ -16,7 +17,9 @@ class Projectile(object):
         if self.projectile_id:
             self.image = self.animation_list[self.frame_index]
         else:
-            self.image = self.animation_list[0]
+            self.image_original = self.animation_list[0]
+            self.image = self.image_original.copy()
+
         self.image_height = self.image.get_height()
         self.image_width = self.image.get_width()
 
@@ -38,6 +41,9 @@ class Projectile(object):
             self.flip = False
         self.destroy = False
         self.collision = False
+        self.rotation = 0
+        self.rotation_speed = random.randrange(2, 10) * self.direction
+        self.rotation_time = 0
 
     def update(self, time_passed, time, projectiles_list):
         self.update_time = time_passed
@@ -48,12 +54,15 @@ class Projectile(object):
             if self.projectile_id:
                 self.rect.x += (self.speed * time)
             else:
-                self.position += self.desired * time * self.speed
+                previous_center = self.rect.center
+                self.rect = self.image.get_rect()
+                self.rect.center = previous_center
+
+                self.position += self.desired * time * abs(self.speed)
                 self.rect.center = self.position
 
     def draw(self, display, offset_x, offset_y):
-        pygame.draw.rect(display, RED, [
-                         self.rect.x - offset_x, self.rect.y - offset_y, self.rect.w, self.rect.h], 2)
+
         display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
                                                                            offset_x, self.rect.y - offset_y))
 
@@ -63,6 +72,11 @@ class Projectile(object):
             self.image = self.animation_list[self.frame_index]
         if self.update_time - self.animation_time > ANIMATION_COOLDOWN:
             self.animation_time = self.update_time
+            if not self.projectile_id:
+                self.rotation = (self.rotation + self.rotation_speed) % 360
+                new_image = pygame.transform.rotate(
+                    self.image_original, self.rotation)
+                self.image = new_image
             self.frame_index += 1
         if not self.destroy and self.frame_index >= 4:
             self.frame_index = 0

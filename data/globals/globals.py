@@ -28,10 +28,14 @@ hit_sound = pygame.mixer.Sound('data/sounds/hit.wav')
 menu_select_sound = pygame.mixer.Sound('data/sounds/menu_select.wav')
 mob_death_sound = pygame.mixer.Sound('data/sounds/mob_death.wav')
 potion_sound = pygame.mixer.Sound('data/sounds/potion.wav')
+next_click_sound = pygame.mixer.Sound('data/sounds/next_click.wav')
 swing_sound = pygame.mixer.Sound('data/sounds/swing.wav')
 throw_sound = pygame.mixer.Sound('data/sounds/throw.wav')
 bonk_sound = pygame.mixer.Sound('data/sounds/bonk.wav')
+decoy_sound = pygame.mixer.Sound('data/sounds/decoy.wav')
 wave_complete_sound = pygame.mixer.Sound('data/sounds/wave_complete.wav')
+lightning_sound = pygame.mixer.Sound('data/sounds/lightning.wav')
+explode_sound = pygame.mixer.Sound('data/sounds/explode.wav')
 
 sound_effects = []
 sound_effects.extend([boss_battle_sound,

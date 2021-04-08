@@ -410,7 +410,7 @@ class Player():
         self.ready_to_fire = False
 
     def cast_lightning(self):
-        random.choice([fireball_cast_sound, fireball_cast2_sound]).play()
+        lightning_sound.play()
         self.lightning_time = self.update_time
         if self.facing_positive:
             direction = 1
@@ -427,6 +427,7 @@ class Player():
         self.ready_to_fire = False
 
     def cast_decoy(self):
+        decoy_sound.play()
         self.decoy_time = self.update_time
         self.new_entities.clear()
         if self.facing_positive:

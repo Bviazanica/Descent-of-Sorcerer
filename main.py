@@ -91,7 +91,7 @@ def game():
     current_time = 0
     time_before_pause = 0
     enemies_to_defeat = 0
-    wave_number = 0
+    wave_number = 9
     spawn_mobs_number = 4
     total_mobs_per_wave = 2
     max_spawn_mobs_number = 8
@@ -200,6 +200,7 @@ def game():
                                 if not music_handler.paused:
                                     pygame.mixer.music.play(-1, 0.0)
                                 clickable = False
+                                menu_select_sound.play()
 
                         if menu_button.draw(canvas):
                             if clickable:
@@ -210,6 +211,7 @@ def game():
                                 if not music_handler.paused:
                                     pygame.mixer.music.play(-1, 0.0)
                                 clickable = False
+                                menu_select_sound.play()
 
                         draw_text('GAME OVER', humongous_font_gothikka, WHITE,
                                   canvas, SCREEN_SIZE[0]//2, 100)
@@ -439,6 +441,7 @@ def game():
                     tutorial_stage = tutorial_stages[tutorial_stage_index]
                     new_tutorial_stage = True
                     tutorial_text.fill((0, 0, 0, 180))
+                next_click_sound.play()
 
             if new_tutorial_stage:
                 new_tutorial_stage = False
@@ -570,21 +573,26 @@ def main_menu():
         if game_button.draw(canvas):
             if clickable:
                 clickable = False
+                menu_select_sound.play()
                 game()
         if controls_button.draw(canvas):
             if clickable:
                 clickable = False
+                menu_select_sound.play()
                 controls()
         if credits_button.draw(canvas):
             if clickable:
                 clickable = False
+                menu_select_sound.play()
                 show_credits()
         if quit_button.draw(canvas):
             if clickable:
+                menu_select_sound.play()
                 pygame.quit()
                 sys.exit()
         if toggle_audio_button.draw(canvas):
             if clickable:
+                menu_select_sound.play()
                 music_handler.toggle()
                 clickable = False
 

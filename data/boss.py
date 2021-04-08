@@ -55,7 +55,7 @@ class Boss():
 
         self.whirlwind_damage = 30
         self.projectile_damage = 25
-        self.projectile_speed = 200
+        self.projectile_speed = 20
 
         self.update_time = 0
         self.animation_time = 0
@@ -147,7 +147,7 @@ class Boss():
 
         if(self.projectiles):
             for projectile in self.projectiles:
-                print(f'{projectile.rect}')
+
                 collision_list = check_collision(
                     projectile.rect, new_entities)
                 if len(collision_list) and not projectile.destroy:
@@ -194,7 +194,7 @@ class Boss():
         self.desired.normalize_ip()
         if self.desired[0] <= 0:
             projectile = Projectile(
-                (self.hitbox.x, self.hitbox.centery), 1, self.desired, 0, self.projectile_damage, self.projectile_speed)
+                (self.hitbox.x, self.hitbox.centery), -1, self.desired, 0, self.projectile_damage, self.projectile_speed)
         else:
             projectile = Projectile(
                 (self.hitbox.x + self.hitbox.width, self.hitbox.centery), 1, self.desired, 0, self.projectile_damage, self.projectile_speed)
