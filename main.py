@@ -29,6 +29,7 @@ pygame.init()
 # Titles
 pygame.display.set_caption("Game")
 
+pygame.mouse.set_cursor(*pygame.cursors.tri_left)
 # background
 background = pygame.image.load(
     'data/images/backgrounds/background.png').convert()
@@ -44,19 +45,19 @@ tutorial_text.fill((0, 0, 0, 180))
 
 # upgrade images
 fireball_icon = (pygame.image.load(
-    'data/images/icons/new/fireball_big_icon.jpg'))
+    'data/images/icons/fireball_big_icon.jpg'))
 staff_icon = pygame.image.load(
-    'data/images/icons/new/staff_big_icon.jpg')
+    'data/images/icons/staff_big_icon.jpg')
 lightning_icon = pygame.image.load(
-    'data/images/icons/new/lightning_big_icon.jpg')
+    'data/images/icons/lightning_big_icon.jpg')
 decoy_icon = pygame.image.load(
-    'data/images/icons/new/decoy_big_icon.jpg')
+    'data/images/icons/decoy_big_icon.jpg')
 
 entities = []
 items = []
 mobs = []
 stages = {'tutorial': 'tutorial', 'starting': 'starting',
-          'fighting': 'fighting', 'ending': 'ending', 'upgrading': 'upgrading', 'discovering': 'discovering'}
+          'fighting': 'fighting', 'ending': 'ending', 'upgrading': 'upgrading', 'discovering': 'discovering', 'finish': 'finish'}
 tutorial_stages = ['movement',  'attacks', 'game', 'pause']
 
 tutorial = True
@@ -91,7 +92,7 @@ def game():
     current_time = 0
     time_before_pause = 0
     enemies_to_defeat = 0
-    wave_number = 9
+    wave_number = 4
     spawn_mobs_number = 4
     total_mobs_per_wave = 2
     max_spawn_mobs_number = 8
@@ -104,12 +105,12 @@ def game():
     # tutorial
     next_button = Button(
         SCREEN_SIZE[0] - 25, SCREEN_SIZE[1] - 25, 'arrow', pygame.image.load(
-            'data/images/button/new/arrow.png').convert_alpha())
+            'data/images/button/arrow.png').convert_alpha())
 
     restart_button = Button(SCREEN_SIZE[0]//2, 300, 'menu', pygame.image.load(
-        'data/images/button/new/button.png').convert_alpha())
+        'data/images/button/button.png').convert_alpha())
     menu_button = Button(SCREEN_SIZE[0]//2, 400, 'menu', pygame.image.load(
-        'data/images/button/new/button.png').convert_alpha())
+        'data/images/button/button.png').convert_alpha())
 
     if tutorial:
         stage = stages['tutorial']
@@ -117,7 +118,7 @@ def game():
         new_tutorial_stage = True
         tutorial_stage = tutorial_stages[tutorial_stage_index]
     else:
-        stage = stages['upgrading']
+        stage = stages['starting']
         stage_start = 0
         new_stage = True
     # Game Loop
@@ -145,6 +146,7 @@ def game():
                         time_before_pause = current_time
                     if not paused:
                         current_time = time_before_pause
+
                 if event.key == K_m:
                     music_handler.toggle()
 
@@ -172,6 +174,7 @@ def game():
 
                         if restart_button.draw(canvas):
                             if clickable:
+                                menu_select_sound.play()
                                 entities.clear()
                                 items.clear()
                                 mobs.clear()
@@ -200,10 +203,10 @@ def game():
                                 if not music_handler.paused:
                                     pygame.mixer.music.play(-1, 0.0)
                                 clickable = False
-                                menu_select_sound.play()
 
                         if menu_button.draw(canvas):
                             if clickable:
+                                menu_select_sound.play()
                                 player.death_screen_ready = False
                                 death_screen_running = False
                                 running = False
@@ -211,11 +214,9 @@ def game():
                                 if not music_handler.paused:
                                     pygame.mixer.music.play(-1, 0.0)
                                 clickable = False
-                                menu_select_sound.play()
 
                         draw_text('GAME OVER', humongous_font_gothikka, WHITE,
                                   canvas, SCREEN_SIZE[0]//2, 100)
-
                         draw_text('You have reached wave '+str(wave_number), font_gothikka_big, WHITE,
                                   canvas, SCREEN_SIZE[0]//2, 200)
                         draw_text('Restart', font_gothikka, WHITE,
@@ -311,6 +312,7 @@ def game():
                             stage = stages['upgrading']
                             new_stage = True
                             paused = True
+
                         else:
                             stage = stages['starting']
                             new_stage = True
@@ -415,13 +417,8 @@ def game():
             item.draw(canvas, camera.offset.x, camera.offset.y)
 
         # sort entities by Y position, from the lowest to highest
-        # entities.sort(key=entities, reverse=...)
-
-        # To return a new list, use the sorted() built-in function...
         sorted_entities = sorted(
             entities, key=lambda x: x.hitbox.bottom, reverse=False)
-
-        # zobrat vsetky entity, vytiahnut 'y' kazdeho prvku, dat ich do noveho pola a podla toho drawovat
 
         for entity in sorted_entities:
             entity.draw(canvas, camera.offset.x, camera.offset.y, player)
@@ -477,6 +474,7 @@ def game():
         elif stage == stages['discovering']:
             if new_stage:
                 stage_start = current_time
+                ability_learn_sound.play()
                 stage_loading_time = 8000
                 tutorial_text.fill((0, 0, 0, 180))
                 new_stage = False
@@ -513,7 +511,10 @@ def game():
         if paused:
             canvas.blit(dim_screen, (0, 0))
             if stage == stages['upgrading']:
-                clickable = True
+                if new_stage:
+                    upgrade_abilities_sound.play()
+                    clickable = True
+                    new_stage = False
                 draw_text('Choose ability to upgrade', humongous_font_gothikka,
                           WHITE, canvas, SCREEN_SIZE[0]//2, 100)
                 for skill in skills_icons:
@@ -523,6 +524,7 @@ def game():
                             clickable = False
                             paused = False
                             new_stage = True
+                            upgrade_sound.play()
                             if wave_number == 5 or wave_number == 10:
                                 stage = stages['discovering']
                             else:
@@ -531,8 +533,6 @@ def game():
             else:
                 draw_text('PAUSED', humongous_font_gothikka, WHITE,
                           canvas, SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2)
-        # print(f
-        #     f'{player.melee_damage,player.projectile_damage, player.lightning_damage,player.decoy_damage}')
 
         window.blit(canvas, (0, 0))
         pygame.display.update()
@@ -543,21 +543,23 @@ def main_menu():
     pygame.mixer.music.play(-1, 0.0)
     # menu
     game_button = Button(SCREEN_SIZE[0]//2, 100, 'menu', pygame.image.load(
-        'data/images/button/new/button.png').convert_alpha())
+        'data/images/button/button.png').convert_alpha())
     controls_button = Button(SCREEN_SIZE[0]//2, 200, 'menu', pygame.image.load(
-        'data/images/button/new/button.png').convert_alpha())
+        'data/images/button/button.png').convert_alpha())
     credits_button = Button(SCREEN_SIZE[0]//2, 300, 'menu', pygame.image.load(
-        'data/images/button/new/button.png').convert_alpha())
+        'data/images/button/button.png').convert_alpha())
     quit_button = Button(SCREEN_SIZE[0]//2, 400, 'menu', pygame.image.load(
-        'data/images/button/new/button.png').convert_alpha())
+        'data/images/button/button.png').convert_alpha())
     toggle_audio_button = Button(
         SCREEN_SIZE[0] - 50, SCREEN_SIZE[1] - 50, 'audio', pygame.image.load(
-            'data/images/button/new/audio_on.png').convert_alpha())
+            'data/images/button/audio_on.png').convert_alpha())
+    audio_state_changed = False
     while True:
         time_passed = clock.tick(FPS)
         time_passed_seconds = time_passed / 1000.0
         canvas.fill((0, 0, 0))
         clickable = True
+
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
@@ -592,17 +594,18 @@ def main_menu():
                 sys.exit()
         if toggle_audio_button.draw(canvas):
             if clickable:
-                menu_select_sound.play()
-                music_handler.toggle()
+                audio_state_changed = music_handler.toggle()
                 clickable = False
 
-        if music_handler.paused:
-            toggle_audio_button.image = pygame.image.load(
-                'data/images/button/new/audio_off.png').convert_alpha()
-        else:
-            toggle_audio_button.image = pygame.image.load(
-                'data/images/button/new/audio_on.png').convert_alpha()
+        if audio_state_changed:
+            if music_handler.paused:
+                toggle_audio_button.image = pygame.image.load(
+                    'data/images/button/new/audio_off.png').convert_alpha()
 
+            else:
+                toggle_audio_button.image = pygame.image.load(
+                    'data/images/button/new/audio_on.png').convert_alpha()
+            audio_state_changed = False
         draw_text('Start new game', font_gothikka, WHITE,
                   canvas, SCREEN_SIZE[0]//2, 100 + 12)
         draw_text('Controls', font_gothikka, WHITE,

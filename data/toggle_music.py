@@ -19,6 +19,8 @@ class Pause(object):
             self.mute_all_sound_effect()
         self.paused = not self.paused
 
+        return True
+
     def mute_all_sound_effect(self):
         for sound in sound_effects:
             pygame.mixer.Sound.set_volume(sound, 0.0)

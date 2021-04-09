@@ -55,7 +55,7 @@ class Boss():
 
         self.whirlwind_damage = 30
         self.projectile_damage = 25
-        self.projectile_speed = 20
+        self.projectile_speed = 200
 
         self.update_time = 0
         self.animation_time = 0

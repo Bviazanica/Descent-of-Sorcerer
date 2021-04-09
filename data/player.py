@@ -42,19 +42,19 @@ class Player():
         self.effects = []
 
         self.fireball_icon = pygame.image.load(
-            'data/images/icons/new/fireball_icon.jpg')
+            'data/images/icons/fireball_icon.jpg')
         self.staff_icon = pygame.image.load(
-            'data/images/icons/new/staff_icon.jpg')
+            'data/images/icons/staff_icon.jpg')
         self.lightning_icon = pygame.image.load(
-            'data/images/icons/new/lightning_icon.jpg')
+            'data/images/icons/lightning_icon.jpg')
         self.decoy_icon = pygame.image.load(
-            'data/images/icons/new/decoy_icon.jpg')
+            'data/images/icons/decoy_icon.jpg')
         self.spells_icons = [self.fireball_icon, self.staff_icon]
 
         self.invulnerability_icon = pygame.image.load(
-            'data/images/icons/new/invulnerability_icon.png').convert_alpha()
+            'data/images/icons/invulnerability_icon.png').convert_alpha()
         self.power_icon = pygame.image.load(
-            'data/images/icons/new/power_icon.png').convert()
+            'data/images/icons/power_icon.png').convert()
 
         self.effect_icon_width = self.power_icon.get_width()
         self.effect_icon_height = self.power_icon.get_height()
@@ -89,7 +89,7 @@ class Player():
         # player cooldownsdd
         self.melee_attack_time = self.fireball_time = self.lightning_time = self.decoy_time = -100000
         # attack damage
-        self.melee_damage = 400
+        self.melee_damage = 4000
         self.meele_mana_regeneration = 20
         # speed
         self.speed = 250
@@ -104,7 +104,7 @@ class Player():
         self.new_entities = []
         # projectiles
         self.projectiles = []
-        self.projectile_damage = 100
+        self.projectile_damage = 10000
         self.projectile_speed = 400
 
         # healthpoints
@@ -224,8 +224,6 @@ class Player():
                 lg.draw(display, offset_x, offset_y)
         display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
                                                                            offset_x, self.rect.y - offset_y))
-        # pygame.draw.rect(display, (255, 0, 0), [
-        #                  self.hitbox.x - offset_x, self.hitbox.y - offset_y, self.rect.width, self.rect.height], 2)
 
         pygame.draw.rect(display, BLACK,
                          (4, 4, self.hp_bar_width+2, 22), 1)
@@ -379,11 +377,11 @@ class Player():
         swing_sound.play()
         self.melee_attack_time = self.update_time
         if self.facing_positive:
-            attack = pygame.Rect(self.rect.x + ((self.rect.w - self.hitbox_x_offset)), self.rect.y,
+            attack = pygame.Rect(self.hitbox.x + ((self.hitbox.w - self.hitbox_x_offset)), self.hitbox.y,
                                  self.rect.width, self.rect.height)
         else:
             attack = pygame.Rect(
-                ((self.rect.x + self.hitbox_x_offset - self.rect.w)), self.rect.y, self.rect.width, self.rect.height)
+                ((self.hitbox.x + self.hitbox_x_offset - self.hitbox.w)), self.hitbox.y, self.hitbox.width, self.hitbox.height)
 
         collision_list = check_collision(attack, new_entities)
         if len(collision_list):

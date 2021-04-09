@@ -67,9 +67,11 @@ class Projectile(object):
                                                                            offset_x, self.rect.y - offset_y))
 
     def update_animation(self, projectiles_list):
-        ANIMATION_COOLDOWN = 10
         if self.projectile_id:
+            ANIMATION_COOLDOWN = 30
             self.image = self.animation_list[self.frame_index]
+        else:
+            ANIMATION_COOLDOWN = 10
         if self.update_time - self.animation_time > ANIMATION_COOLDOWN:
             self.animation_time = self.update_time
             if not self.projectile_id:

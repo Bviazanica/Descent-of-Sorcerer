@@ -199,12 +199,12 @@ def load_entity_animations():
             # count number of files in the folder
             if os.path.isdir(f'data/images/entities/{entity_type}/{animation}'):
                 num_of_frames = len(os.listdir(
-                    f'data/images/entities/{entity_type}/{animation}/new'))
+                    f'data/images/entities/{entity_type}/{animation}'))
 
                 for i in range(num_of_frames):
                     # print(f'{entity_type} & {animation} - {i}')
                     img = pygame.image.load(
-                        f'data/images/entities/{entity_type}/{animation}/new/{i}.png')
+                        f'data/images/entities/{entity_type}/{animation}/{i}.png')
                     temp_list.append(img)
 
                 entity_animations.append(temp_list)

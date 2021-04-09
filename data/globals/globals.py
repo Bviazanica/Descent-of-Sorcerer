@@ -36,6 +36,11 @@ decoy_sound = pygame.mixer.Sound('data/sounds/decoy.wav')
 wave_complete_sound = pygame.mixer.Sound('data/sounds/wave_complete.wav')
 lightning_sound = pygame.mixer.Sound('data/sounds/lightning.wav')
 explode_sound = pygame.mixer.Sound('data/sounds/explode.wav')
+win_sound = pygame.mixer.Sound('data/sounds/win.wav')
+upgrade_abilities_sound = pygame.mixer.Sound(
+    'data/sounds/upgrade_abilities.wav')
+upgrade_sound = pygame.mixer.Sound('data/sounds/upgrade.wav')
+ability_learn_sound = pygame.mixer.Sound('data/sounds/ability_learn.wav')
 
 sound_effects = []
 sound_effects.extend([boss_battle_sound,
