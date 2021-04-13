@@ -4,9 +4,7 @@ from data.globals.globals import *
 
 
 class CutSceneOne:
-
     def __init__(self, player, started_time):
-
         # Variables
         self.name = 'scene'
         self.step = 0
@@ -16,7 +14,7 @@ class CutSceneOne:
         # If we need to control the player while a cut scene running
         self.player = player
 
-        # Dialogue
+        # text to render
         self.text = {
             'one': "There are no enemies left...",
             'two': "Time to find a new challange..."
@@ -28,7 +26,8 @@ class CutSceneOne:
         pressed = pygame.key.get_pressed()
         enter = pressed[pygame.K_RETURN]
 
-        if self.step == 0 and self.current_time - self.started_time > 1500:
+        if self.step == 0 and self.current_time - self.started_time > 1000:
+            self.player.state = self.player.states['IDLING']
             if int(self.text_counter) < len(self.text['one']):
                 self.text_counter += 0.2
             else:
@@ -79,6 +78,8 @@ class CutSceneOne:
                 50
             )
 
+# manager for cutscenes
+
 
 class CutSceneManager:
 
@@ -112,10 +113,11 @@ class CutSceneManager:
 
     def draw(self, font):
         if self.cut_scene_running:
-            # Draw rect generic to all cut scenes
+            # Draw rects generic to all cut scenes
             pygame.draw.rect(self.screen, BLACK,
                              (0, 0, self.screen.get_width(), self.window_size))
             pygame.draw.rect(self.screen, BLACK,
                              (0, SCREEN_SIZE[1]-self.window_size, self.screen.get_width(), self.window_size))
+
             # Draw specific cut scene details
             self.cut_scene.draw(self.screen, font)

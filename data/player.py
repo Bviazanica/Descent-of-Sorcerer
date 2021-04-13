@@ -42,6 +42,7 @@ class Player():
         # effects of potions
         self.effects = []
 
+        # icons for cd's and effects
         self.fireball_icon = pygame.image.load(
             'data/images/icons/fireball_icon.jpg')
         self.staff_icon = pygame.image.load(
@@ -57,12 +58,14 @@ class Player():
         self.power_icon = pygame.image.load(
             'data/images/icons/power_icon.png').convert()
 
+        # get sizes of icons
         self.effect_icon_width = self.power_icon.get_width()
         self.effect_icon_height = self.power_icon.get_height()
 
         self.skill_icon_width = self.fireball_icon.get_width()
         self.skill_icon_height = self.fireball_icon.get_height()
 
+        # cooldown effects and not enough mana
         self.dim_screen = pygame.Surface((
             self.skill_icon_width, self.skill_icon_height)).convert_alpha()
         self.dim_screen.fill((0, 0, 0, 180))
@@ -83,29 +86,29 @@ class Player():
         self.facing_positive = True
         # cooldowns
         self.cooldowns = {'melee': 4000, 'fireball': 2000,
-                          'lightning': 8000, 'decoy': 5000}
+                          'lightning': 10000, 'decoy': 20000}
         # mana costs
-        self.mana_costs = {'fireball': 30,
+        self.mana_costs = {'fireball': 35,
                            'lightning': 75, 'decoy': 120}
         # player cooldownsdd
         self.melee_attack_time = self.fireball_time = self.lightning_time = self.decoy_time = -100000
         # attack damage
-        self.melee_damage = 4000
+        self.melee_damage = 35
         self.meele_mana_regeneration = 20
         # speed
         self.speed = 250
 
         # spells
         self.lightnings = []
-        self.decoy_damage = 200
-        self.lightning_damage = 50
+        self.decoy_damage = 150
+        self.lightning_damage = 90
 
         self.lightning_learned = False
         self.decoy_learned = False
         self.new_entities = []
         # projectiles
         self.projectiles = []
-        self.projectile_damage = 10000
+        self.projectile_damage = 40
         self.projectile_speed = 400
 
         # healthpoints
@@ -133,14 +136,12 @@ class Player():
         self.entities_summoned = False
         self.casting = ''
 
-    # update position
-
     def update(self, time_passed, time, movement, entities, stage, cut_scene_manager):
         self.update_time = time_passed
         new_entities = new_list_without_self(self, entities)
         self.update_animation(new_entities)
 
-        print(movement)
+        # state management
         if self.is_alive:
             if self.init_state:
                 if self.state == 'IDLING':
@@ -171,6 +172,7 @@ class Player():
 
             self.regenerate_mana(self.mana_regeneration)
 
+            # buffs effects
             if self.boosted and self.update_time - self.boosted_timer > 5000:
                 reset(self, self.boosted_attacks_by)
                 self.boosted = False
@@ -183,6 +185,7 @@ class Player():
                     self.effects.pop(self.effects.index(
                         self.invulnerability_icon))
 
+        # player projectiles
         if self.projectiles:
             for projectile in self.projectiles:
                 collision_list = check_collision(
@@ -203,11 +206,13 @@ class Player():
                 else:
                     projectile.update(self.update_time, time, self.projectiles)
 
+        # lightning
         if self.lightnings:
             for lightning in self.lightnings:
                 lightning.update(self.update_time,
                                  self.lightnings, new_entities)
 
+    # movement of player
     def move(self, rect, movement, time):
 
         self.flip = not self.facing_positive
@@ -220,8 +225,8 @@ class Player():
         self.hitbox.y = self.rect.y + self.hitbox_y_offset
 
         return self.rect
-    # draw player to canvas
 
+    # draw bars etc
     def draw(self, display, offset_x, offset_y, player):
         if(self.projectiles):
             for projectile in self.projectiles:
@@ -258,6 +263,7 @@ class Player():
             display.blit(effect, (x, y))
             x += 40
 
+    # cooldowns of abilities and their effects
     def draw_cooldowns(self, display, font):
         x = 5
         y = SCREEN_SIZE[1]-47
@@ -301,6 +307,7 @@ class Player():
             display.blit(self.mana_dim,
                          (158, y+3))
 
+    # player getting hit
     def hit(self, damage):
         if self.invulnerability:
             return
@@ -323,6 +330,7 @@ class Player():
             self.health_points -= damage
             hit_sound.play()
 
+    # animations of player
     def update_animation(self, new_entities):
         ANIMATION_COOLDOWN = 50
         # update image depending on current frame
@@ -380,6 +388,7 @@ class Player():
             self.frame_index = 0
             self.animation_time = self.update_time
 
+    # melee attack of player
     def melee_attack(self, new_entities):
         swing_sound.play()
         self.melee_attack_time = self.update_time
@@ -398,6 +407,7 @@ class Player():
                     bonk_sound.play()
             self.regenerate_mana(self.meele_mana_regeneration)
 
+    # fireball
     def cast_fireball(self):
         random.choice([fireball_cast_sound, fireball_cast2_sound]).play()
         self.fireball_time = self.update_time
@@ -414,6 +424,7 @@ class Player():
         self.mana_points -= self.mana_costs['fireball']
         self.ready_to_fire = False
 
+    # lightning
     def cast_lightning(self):
         lightning_sound.play()
         self.lightning_time = self.update_time
@@ -431,6 +442,7 @@ class Player():
         self.mana_points -= self.mana_costs['lightning']
         self.ready_to_fire = False
 
+    # decoy
     def cast_decoy(self):
         decoy_sound.play()
         self.decoy_time = self.update_time
@@ -449,12 +461,14 @@ class Player():
         self.mana_points -= self.mana_costs['decoy']
         self.ready_to_fire = False
 
+    # animation for running melee attack
     def state_running_attacking(self, new_entities):
         if self.init_state:
             self.init_state = False
             self.set_action(Animation_type.Run_Slashing)
             self.melee_attack(new_entities)
 
+    # animation for running firing
     def state_running_firing(self):
         if self.init_state:
             self.init_state = False

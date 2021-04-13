@@ -20,6 +20,7 @@ class Lightning():
 
         self.ready = False
         self.damage = damage
+        # direction of lightning
         if direction == 1:
             self.hitbox = pygame.Rect(
                 self.rect.x + self.hitbox_x_offset, self.rect.y+self.rect.height-self.hitbox_y_offset, 180, 100)
@@ -36,9 +37,6 @@ class Lightning():
     def draw(self, display, offset_x, offset_y):
         display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
                                                                            offset_x, self.rect.y - offset_y))
-
-        pygame.draw.rect(display, (255, 0, 0), [
-                         self.hitbox.x - offset_x, self.hitbox.y - offset_y, self.hitbox.width, self.hitbox.height], 2)
 
     def update_animation(self, lightnings_list, new_entities):
         ANIMATION_COOLDOWN = 50

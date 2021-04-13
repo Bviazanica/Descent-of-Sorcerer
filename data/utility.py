@@ -43,7 +43,7 @@ def upgrade_skill(index, player):
     if index == 0:
         player.projectile_damage += 20
         player.cooldowns['fireball'] -= 250
-        player.mana_costs['fireball'] = 10
+        player.mana_costs['fireball'] = 20
     if index == 1:
         player.melee_damage += 20
         player.meele_mana_regeneration += 10
@@ -57,6 +57,7 @@ def upgrade_skill(index, player):
         player.mana_costs['decoy'] -= 10
 
 
+# resets power buff
 def reset(self, values_before_boost):
     self.projectile_damage = (values_before_boost[0])
     self.melee_damage = (values_before_boost[1])
@@ -71,6 +72,7 @@ def boost_attacks(boost_spells, stacks, target):
     target.decoy_damage += (boost_spells[3]//5) * stacks
 
 
+# boss summonings
 def summon(object, x, y, number, wave_number, x_to_destination, spawned, start_upgrade_after_wave):
     mobs = []
     col = 0
@@ -256,6 +258,7 @@ def load_spells_animations():
     return spells_animations
 
 
+# load animations
 entities_animation_list = load_entity_animations()
 projectiles_animation_list = load_projectile_animations()
 spells_animation_list = load_spells_animations()

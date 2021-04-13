@@ -92,6 +92,7 @@ class Boss():
             else:
                 self.flip = False
 
+            # state management
             if self.state == 'APPEARING':
                 self.go_to = Vector2(
                     self.desired_appear.x - self.rect.centerx, self.desired_appear.y - self.rect.centery)
@@ -144,7 +145,7 @@ class Boss():
                     self.hitbox.x = self.rect.x + self.hitbox_x_offset
                     check_boundaries_for_y(self)
                     self.hitbox.y = self.rect.y + self.hitbox_y_offset
-
+        # boss projectiles
         if(self.projectiles):
             for projectile in self.projectiles:
 
@@ -176,17 +177,18 @@ class Boss():
             for projectile in self.projectiles:
                 projectile.draw(display, offset_x, offset_y)
         # healthbar
-        pygame.draw.rect(display, (0, 0, 0),
+        pygame.draw.rect(display, BLACK,
                          (SCREEN_SIZE[0] - 6 - self.hp_bar_width, 4, self.hp_bar_width + 2, 22), 1)
         healthbar_width = int(
             self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points)))
         if self.is_alive:
-            pygame.draw.rect(display, (255, 0, 0),
+            pygame.draw.rect(display, RED,
                              (SCREEN_SIZE[0] - 5 - healthbar_width, 5, healthbar_width, 20))
 
         draw_text('Golem', font_gothikka_bold, WHITE,
                   display, SCREEN_SIZE[0]-35, 25)
 
+    # boss throw
     def fire(self, target):
         throw_sound.play()
         self.desired = target - \
@@ -200,16 +202,19 @@ class Boss():
                 (self.hitbox.x + self.hitbox.width, self.hitbox.centery), 1, self.desired, 0, self.projectile_damage, self.projectile_speed)
         self.projectiles.append(projectile)
 
+    # close aoe attack
     def whirlwind(self, player):
         if is_close(self.hitbox, player.hitbox, 200):
             player.hit(self.whirlwind_damage)
 
+    # heal when consuming mob
     def heal(self, heal_amount):
         if self.health_points + heal_amount <= self.max_hp:
             self.health_points += heal_amount
         elif self.health_points + heal_amount > self.max_hp:
             self.health_points = self.max_hp
 
+    # getting hit
     def hit(self, damage):
         if self.health_points - damage <= 0 and self.state != self.states['DYING']:
             self.is_alive = False
@@ -231,6 +236,7 @@ class Boss():
     def get_summoned_entities(self):
         return self.new_entities
 
+    # animations management
     def update_animation(self, player, Mob, wave_number, start_upgrade_after_wave):
         ANIMATION_COOLDOWN = 50
         # update image depending on current frame
@@ -245,8 +251,8 @@ class Boss():
         if self.update_time - self.animation_time > ANIMATION_COOLDOWN:
             self.animation_time = self.update_time
             self.frame_index += 1
-        # out of images - resets
 
+        # attacks based on animation frame
         if self.action == int(Animation_type.Slashing_in_The_Air) and self.frame_index == len(self.animation_list[self.action])/2 and self.ready_to_attack:
             self.whirlwind_activation_time = self.update_time
             self.whirlwind(player)
@@ -255,6 +261,7 @@ class Boss():
             self.orbs_activation_time = self.update_time
             self.fire(player.hitbox.center)
             self.ready_to_fire = False
+        # animation over on different actions
         if self.frame_index >= len(self.animation_list[self.action]):
             if self.action == int(Animation_type.Dying):
                 self.frame_index = len(self.animation_list[self.action]) - 1
@@ -280,6 +287,7 @@ class Boss():
                 self.init_state = True
             else:
                 self.frame_index = 0
+    # set animation type
 
     def set_action(self, new_action):
         # check if the new action != previous

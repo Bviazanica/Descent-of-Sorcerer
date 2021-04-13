@@ -27,8 +27,6 @@ pygame.mixer.pre_init(44100, 16, 2, 4096)
 mixer.init()
 pygame.init()
 
-# cut scenes
-cut_scene_manager = CutSceneManager(canvas)
 # Titles
 pygame.display.set_caption("Game")
 
@@ -60,12 +58,12 @@ decoy_icon = pygame.image.load(
 # states of game
 stages = {'tutorial': 'tutorial', 'starting': 'starting',
           'fighting': 'fighting', 'ending': 'ending', 'upgrading': 'upgrading', 'discovering': 'discovering', 'finish': 'finish'}
-#mechanics in tutorial
+# mechanics in tutorial
 tutorial_stages = ['movement',  'attacks', 'game', 'pause']
 
 tutorial = True
 clickable = True
-
+two_seconds_timer = 2000
 # music volume and sounds volume
 pygame.mixer.music.set_volume(0.1)
 music_handler = Pause()
@@ -96,7 +94,8 @@ def game():
     current_time = 0
     time_before_pause = 0
     enemies_to_defeat = 0
-    wave_number = 39
+    wave_number = 0
+    final_wave = 30
     spawn_mobs_number = 4
     total_mobs_per_wave = 2
     max_spawn_mobs_number = 8
@@ -108,6 +107,10 @@ def game():
     tutorial_text.fill((0, 0, 0, 180))
     boss = []
     amount = 50
+    discover_started = 0
+
+    # cut scenes
+    cut_scene_manager = CutSceneManager(canvas)
 
     next_button = Button(
         SCREEN_SIZE[0] - 25, SCREEN_SIZE[1] - 25, 'arrow', pygame.image.load(
@@ -197,8 +200,9 @@ def game():
                                 player.death_screen_ready = False
                                 death_screen_running = False
                                 stage = stages['starting']
+                                new_stage = True
                                 stage_start = 0
-                                wave_number = 1
+                                wave_number = 0
                                 boss_fight = False
                                 enemies_to_defeat = 2
                                 spawn_mobs_number = 4
@@ -211,6 +215,8 @@ def game():
                                 if not music_handler.paused:
                                     pygame.mixer.music.play(-1, 0.0)
                                 clickable = False
+                                # cut scenes
+                                cut_scene_manager = CutSceneManager(canvas)
                         # return to menu from game over screen
                         if menu_button.draw(canvas):
                             if clickable:
@@ -249,7 +255,7 @@ def game():
                         stage_loading_time = 5000
                         wave_number += 1
                         boss_fight = False
-                        if wave_number % 1 == 0:
+                        if wave_number % 5 == 0:
                             boss_fight = True
                             amount += 5
                         else:
@@ -257,6 +263,7 @@ def game():
                             enemies_to_defeat = total_mobs_per_wave
                         stage_start = current_time
                         new_stage = False
+
                     if current_time - stage_start > stage_loading_time:
                         stage = stages['fighting']
                         new_stage = True
@@ -274,7 +281,7 @@ def game():
                             if spawn_mobs_number < max_spawn_mobs_number:
                                 spawn_mobs_number += 2
                         if len(mobs) < 1 and not boss.is_alive:
-                            if wave_number != 40:
+                            if wave_number != final_wave:
                                 stage = stages['ending']
                             else:
                                 stage = stages['finish']
@@ -300,10 +307,12 @@ def game():
                         if spawn_coords_x > 0:
                             desired_coords_offset *= -1
                         remaining_mobs = enemies_to_defeat - len(mobs)
+
                         if len(mobs) < 1 and enemies_to_defeat > 0:
                             if enemies_to_defeat >= spawn_mobs_number:
                                 last_spawned_time = current_time
-                                new_mobs = summon(Enemy, spawn_coords_x, 50, spawn_mobs_number//2,
+
+                                new_mobs = summon(Enemy, spawn_coords_x, 50, spawn_mobs_number,
                                                   wave_number, desired_coords_offset, True, start_upgrade_after_wave)
                             elif enemies_to_defeat >= spawn_mobs_number//2:
                                 last_spawned_time = current_time
@@ -313,12 +322,14 @@ def game():
                             entities.extend(new_mobs)
                         elif remaining_mobs >= spawn_mobs_number and current_time - last_spawned_time > spawn_cooldown:
                             last_spawned_time = current_time
+
                             new_mobs = summon(Enemy, spawn_coords_x, 50, spawn_mobs_number,
                                               wave_number, desired_coords_offset, True, start_upgrade_after_wave)
                             mobs.extend(new_mobs)
                             entities.extend(new_mobs)
                         elif remaining_mobs < spawn_mobs_number and remaining_mobs > 0 and current_time - last_spawned_time > spawn_cooldown:
                             last_spawned_time = current_time
+
                             new_mobs = summon(Enemy, spawn_coords_x, 50, remaining_mobs,
                                               wave_number, desired_coords_offset, True, start_upgrade_after_wave)
                             mobs.extend(new_mobs)
@@ -418,16 +429,16 @@ def game():
             # clearing defeated mob entities
             for mob in mobs.copy():
                 if not mob.is_alive and mob.init_state:
-                    if random.random() > 0.85:
-                        new_potion = Potion(random.choice(['invulnerability', 'health', 'mana', 'power']),
-                                            mob.hitbox.midbottom, 32, 32)
-                        items.append(new_potion)
                     mobs.pop(mobs.index(mob))
             # clearing defeated en
             for entity in entities.copy():
                 if not entity.is_alive and entity.init_state and entity.type != 'player':
                     if entity.type == 'mob':
                         enemies_to_defeat -= 1
+                        if random.random() > 0.80:
+                            new_potion = Potion(random.choice(['invulnerability', 'health', 'mana', 'power']),
+                                                entity.hitbox.midbottom, 32, 32)
+                            items.append(new_potion)
                     entities.pop(entities.index(entity))
 
             # potions and their effects
@@ -444,6 +455,7 @@ def game():
 
             # adjust camera to player
             camera.scroll()
+
         canvas.blit(background, (int(0 - camera.offset.x +
                                      camera.CONST[0]), int(0 - camera.offset.y + camera.CONST[1])))
 
@@ -470,6 +482,7 @@ def game():
                 if tutorial_stage_index == len(tutorial_stages)-1:
                     stage = stages['starting']
                     new_stage = True
+                    tutorial_text.fill((0, 0, 0, 180))
                 else:
                     tutorial_stage_index += 1
                     tutorial_stage = tutorial_stages[tutorial_stage_index]
@@ -510,37 +523,38 @@ def game():
 
         # discover stage
         elif stage == stages['discovering']:
-            if new_stage:
-                stage_start = current_time
-                ability_learn_sound.play()
-                stage_loading_time = 8000
-                tutorial_text.fill((0, 0, 0, 180))
-                new_stage = False
-                if wave_number == 5:
-                    available_skills.append(lightning_icon)
-                    player.spells_icons.append(player.lightning_icon)
-                    player.lightning_learned = True
-                    draw_text('You have discovered a new ability - Lightning bolt', font_gothikka, WHITE,
-                              tutorial_text, SCREEN_SIZE[0]/2, 10)
-                    draw_text('To cast Lightning bolt press C', font_gothikka, WHITE,
-                              tutorial_text, SCREEN_SIZE[0]/2, 35)
-                elif wave_number == 10:
-                    available_skills.append(decoy_icon)
-                    player.spells_icons.append(player.decoy_icon)
-                    player.decoy_learned = True
-                    draw_text('You have discovered a new ability - Explosive decoy', font_gothikka, WHITE,
-                              tutorial_text, SCREEN_SIZE[0]/2, 10)
-                    draw_text('To cast Explosive decoy press V', font_gothikka, WHITE,
-                              tutorial_text, SCREEN_SIZE[0]/2, 35)
-                skills_icons = show_upgrade_option(available_skills)
-
-            if current_time - stage_start > stage_loading_time:
-                stage = stages['starting']
-                new_stage = True
-
             canvas.blit(front_decor, (int(0 - camera.offset.x +
                                           camera.CONST[0]), int(0 - camera.offset.y + camera.CONST[1])))
-            canvas.blit(tutorial_text, (0, SCREEN_SIZE[1] - 100))
+            if current_time - discover_started > two_seconds_timer:
+                canvas.blit(tutorial_text, (0, SCREEN_SIZE[1] - 100))
+                if new_stage:
+                    stage_start = current_time
+                    stage_loading_time = 10000
+                    tutorial_text.fill((0, 0, 0, 180))
+                    ability_learn_sound.play()
+                    new_stage = False
+                    if wave_number == 5:
+                        available_skills.append(lightning_icon)
+                        player.spells_icons.append(player.lightning_icon)
+                        player.lightning_learned = True
+                        draw_text('You have discovered a new ability - Lightning bolt', font_gothikka, WHITE,
+                                  tutorial_text, SCREEN_SIZE[0]/2, 10)
+                        draw_text('To cast Lightning bolt press C', font_gothikka, WHITE,
+                                  tutorial_text, SCREEN_SIZE[0]/2, 35)
+                    elif wave_number == 10:
+                        available_skills.append(decoy_icon)
+                        player.spells_icons.append(player.decoy_icon)
+                        player.decoy_learned = True
+                        draw_text('You have discovered a new ability - Explosive decoy', font_gothikka, WHITE,
+                                  tutorial_text, SCREEN_SIZE[0]/2, 10)
+                        draw_text('To cast Explosive decoy press V', font_gothikka, WHITE,
+                                  tutorial_text, SCREEN_SIZE[0]/2, 35)
+                    skills_icons = show_upgrade_option(available_skills)
+
+                if current_time - stage_start > stage_loading_time:
+                    stage = stages['starting']
+                    new_stage = True
+
             player.draw_cooldowns(canvas, font_gothikka_bold_numbers)
         # cooldown and front decor on top layer
         if stage != stages['tutorial'] and stage != stages['discovering']:
@@ -568,6 +582,7 @@ def game():
                             upgrade_sound.play()
                             if wave_number == 5 or wave_number == 10:
                                 stage = stages['discovering']
+                                discover_started = current_time
                             else:
                                 stage = stages['starting']
 

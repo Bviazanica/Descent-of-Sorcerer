@@ -27,9 +27,9 @@ class Button():
         self.hitbox = pygame.Rect(
             (self.rect.x, self.rect.y + self.hitbox_y_offset, self.rect.width, self.rect.height))
 
+    # draw plus action on click
     def draw(self, display):
         action = False
-
         # get mouse position
         pos = pygame.mouse.get_pos()
 

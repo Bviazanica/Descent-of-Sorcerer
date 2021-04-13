@@ -69,6 +69,7 @@ class Enemy():
                        'HURTING': 'HURTING', 'DYING': 'DYING',
                        'ATTACKING': 'ATTACKING', 'IDLING': 'IDLING', 'APPEARING': 'APPEARING'}
 
+        # spawned mobs by boss dont have appearing state
         if spawned:
             self.state = self.states['APPEARING']
         else:
@@ -80,20 +81,16 @@ class Enemy():
         # vector for desired location
         self.desired = Vector2(0, 0)
 
-        # vectors that track position of player corners
-        self.top_left = Vector2(0, 0)
-        self.top_right = Vector2(0, 0)
-        self.bottom_left = Vector2(0, 0)
-        self.bottom_right = Vector2(0, 0)
-        self.vector2 = Vector2(0, 0)
         self.go_to = Vector2(0, 0)
 
     def update(self, time_passed, tick, player, mobs, stage, boss, entities):
         self.local_time = time_passed
         self.update_animation()
+        # targets that mob will hunt
         new_targets = list(filter(lambda x: x.type ==
                                   'player' or x.type == 'decoy', entities))
 
+        # state management
         if self.is_alive:
             if self.state == 'APPEARING':
                 self.speed = 120
@@ -134,9 +131,11 @@ class Enemy():
                         self.init_state = False
                         self.set_action(Animation_type.Kicking)
 
+                # avoiding other mobs
                 self.avoid_mobs(mobs)
                 self.rect.center += self.acceleration
 
+                # boundaries of map
                 check_boundaries_for_x(self)
                 self.hitbox.x = self.rect.x + self.hitbox_x_offset
                 check_boundaries_for_y(self)
@@ -146,40 +145,27 @@ class Enemy():
                 else:
                     self.flip = False
 
+        # dying state
         elif self.state == self.states['DYING'] and not self.init_state:
             self.set_action(Animation_type.Dying)
 
     def draw(self, display, offset_x, offset_y, player):
         display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
                                                                            offset_x, self.rect.y - offset_y))
-        # pygame.draw.rect(display, (255, 0, 0), [
-        #                  self.hitbox.x - offset_x, self.hitbox.y - offset_y, self.rect.width, self.rect.height], 2)
-
-        pygame.draw.rect(display, (255, 0, 0),
-                         (self.hitbox.x -
-                          offset_x, self.hitbox.y - 15 - offset_y, self.hp_bar_width, 10))
+        pygame.draw.rect(display, RED,
+                         (self.hitbox.x - offset_x, self.hitbox.y - 10 - offset_y, self.hp_bar_width, 10))
         if self.is_alive:
-            pygame.draw.rect(display, (0, 200, 0),
+            pygame.draw.rect(display, GREEN,
                              (self.hitbox.x -
-                              offset_x, self.hitbox.y - 15 - offset_y, int(self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points))), 10))
+                              offset_x, self.hitbox.y - 10 - offset_y, int(self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points))), 10))
 
-        # pygame.draw.line(display, RED, self.hitbox.center - Vector2(offset_x,
-        #                                                             offset_y), (self.hitbox.center + self.vector3 * 25) - Vector2(offset_x,
-        #                                                                                                                           offset_y), 5)
-
-        # pygame.draw.line(display, GREEN, self.hitbox.center - Vector2(offset_x,
-        #                                                               offset_y), (self.hitbox.center + self.vector1 * 25) - Vector2(offset_x,
-        #                                                                                                                             offset_y), 5)
-
-        pygame.draw.line(display, WHITE, self.hitbox.center - Vector2(offset_x,
-                                                                      offset_y), (self.hitbox.center + self.vector2 * 25) - Vector2(offset_x,
-                                                                                                                                    offset_y), 5)
-
+    # getting hit
     def hit(self, damage):
         if self.health_points - damage <= 0 and self.state != self.states['DYING']:
             self.is_alive = False
             self.state = self.states['DYING']
             self.health_points = 0
+            self.init_state = False
             mob_death_sound.play()
         elif self.is_alive and self.state == self.states['HURTING']:
             self.frame_index = 0
@@ -192,6 +178,7 @@ class Enemy():
             self.health_points -= damage
             self.init_state = True
 
+    # seeking state function
     def state_seeking(self, time, new_entities):
         if self.init_state:
             self.heading = pygame.Rect(
@@ -200,31 +187,32 @@ class Enemy():
             self.set_action(Animation_type.Walking)
             self.init_state = False
 
+        # if any target is in area, chase it
         for target in new_entities:
             if is_close(self.hitbox, target.hitbox, 200) or not self.health_points == self.max_hp:
                 self.init_state = True
                 self.state = self.states['HUNTING']
                 break
 
+        # determine new location to walk
         if self.local_time - self.new_destination_time > self.cooldowns['new_destination']:
             self.new_destination_time = self.local_time
             self.set_destination()
 
         return self.seek_with_approach(self.heading.center, time)
 
+    # hunting state
     def state_hunting(self, time, player, new_targets):
         if self.init_state:
             self.speed = 150
             self.set_action(Animation_type.Running)
             self.init_state = False
 
-        #player or decoy
-        # ak je blizko decoy, zamera ten, ak nie, zamera hraca
-        # vzdy prednost decoyu v okruhu 200px
-
+        # distance between mob and player
         new_distance = Vector2(
             player.hitbox.centerx - self.hitbox.centerx, player.hitbox.centery - self.hitbox.centery)
         self.min_distance = new_distance.length()
+        # target nearest entity, prefer decoy over player
         new_target = player
         new_targets = list(filter(lambda x: x.type == 'decoy', new_targets))
         if len(new_targets):
@@ -236,6 +224,7 @@ class Enemy():
                         self.min_distance = new_distance.length()
                         new_target = target
 
+        # attack if near the target
         if is_close(self.hitbox, new_target.hitbox, 50):
             self.set_action(Animation_type.Walking)
             if self.local_time - self.attack_time > self.cooldowns['attack']:
@@ -249,6 +238,7 @@ class Enemy():
 
         return self.seek_with_approach(new_target.hitbox.center, time)
 
+    # flee state, if low hp
     def state_flee(self, tick, player, boss):
         if self.init_state:
             self.flee_time = self.local_time
@@ -256,6 +246,7 @@ class Enemy():
             self.set_action(Animation_type.Running)
             self.init_state = False
 
+        # sacrifice if boss fight is on
         if boss:
             if self.local_time - self.flee_time > 5000 and boss.is_alive:
                 self.state = self.states['SACRIFICE']
@@ -263,6 +254,7 @@ class Enemy():
 
         return self.flee(player.hitbox, tick)
 
+    # sacrifice state, when low hp, goes to feed the boss
     def state_sacrifice(self, tick, boss):
         if self.init_state:
             self.speed = 70
@@ -280,10 +272,12 @@ class Enemy():
 
         return self.seek_with_approach(boss.hitbox.center, tick)
 
+    # generate seek destination
     def set_destination(self):
         self.heading = pygame.Rect(
             randint(-268 + 70, 746 - 70), randint(120 + 100, 640 - 100), 1, 1)
 
+    # tracking the target, plus steering
     def seek_with_approach(self, target, tick):
         # vector from position -> target position
         self.desired = (
@@ -307,6 +301,7 @@ class Enemy():
             self.set_action(Animation_type.Idle_Blinking)
             return Vector2(0, 0)
 
+    # flee from
     def flee(self, target, tick):
         steer = Vector2(0, 0)
         distance = Vector2(self.hitbox.centerx - target.centerx,
@@ -321,6 +316,7 @@ class Enemy():
             return Vector2(0, 0)
         return steer
 
+    # avoiding other mobs
     def avoid_mobs(self, mobs):
         for mob in mobs:
             if mob != self:
@@ -329,10 +325,10 @@ class Enemy():
                 if 0 < distance.length() < 50 and self.acceleration.length() != 0:
                     self.acceleration += distance.normalize()
                     self.acceleration.scale_to_length(2.0)
-                    self.vector2 = self.acceleration
                 elif distance.length() == 0:
                     self.acceleration += Vector2(0, 0)
 
+    # animations management
     def update_animation(self):
         ANIMATION_COOLDOWN = 50
         # update image depending on current frame

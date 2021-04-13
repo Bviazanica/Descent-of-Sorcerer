@@ -62,9 +62,6 @@ class Decoy(object):
             self.rect.bottom = self.dying_position[1]
 
     def draw(self, display, offset_x, offset_y, player):
-        pygame.draw.rect(display, RED, [
-                         self.rect.x - offset_x, self.rect.y - offset_y, self.rect.width, self.rect.height], 2)
-
         display.blit(pygame.transform.flip(self.image, not self.facing_positive, False), (self.rect.x -
                                                                                           offset_x, self.rect.y - offset_y))
 

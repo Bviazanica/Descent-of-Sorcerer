@@ -41,6 +41,7 @@ class Projectile(object):
             self.flip = False
         self.destroy = False
         self.collision = False
+        # rotation of boss rocks
         self.rotation = 0
         self.rotation_speed = random.randrange(2, 10) * self.direction
         self.rotation_time = 0
@@ -66,6 +67,7 @@ class Projectile(object):
         display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
                                                                            offset_x, self.rect.y - offset_y))
 
+    # projectile animations
     def update_animation(self, projectiles_list):
         if self.projectile_id:
             ANIMATION_COOLDOWN = 30

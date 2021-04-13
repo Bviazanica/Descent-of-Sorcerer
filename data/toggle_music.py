@@ -1,12 +1,15 @@
 import pygame
 from data.globals.globals import *
 
+# music, sounds and volume handling
+
 
 class Pause(object):
 
     def __init__(self):
         self.paused = pygame.mixer.music.get_busy()
 
+    # toggling sounds
     def toggle(self):
         if self.paused:
             pygame.mixer.music.unpause()
