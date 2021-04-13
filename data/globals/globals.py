@@ -55,7 +55,16 @@ sound_effects.extend([boss_battle_sound,
                       swing_sound,
                       throw_sound,
                       bonk_sound,
-                      wave_complete_sound])
+                      wave_complete_sound,
+                      ability_learn_sound,
+                      upgrade_abilities_sound,
+                      upgrade_sound,
+                      win_sound,
+                      explode_sound,
+                      lightning_sound,
+                      decoy_sound,
+                      next_click_sound
+                      ])
 
 FPS = 60  # frame rate
 SCREEN_SIZE = width, height = 800, 600

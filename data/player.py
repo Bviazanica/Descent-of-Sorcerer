@@ -9,6 +9,7 @@ from data.globals.globals import *
 from data.lightning import Lightning
 from data.projectile import Projectile
 from data.gameobjects.vector2 import Vector2
+from data.cut_scenes import CutSceneOne
 
 
 class Player():
@@ -134,11 +135,12 @@ class Player():
 
     # update position
 
-    def update(self, time_passed, time, movement, entities, stage):
+    def update(self, time_passed, time, movement, entities, stage, cut_scene_manager):
         self.update_time = time_passed
         new_entities = new_list_without_self(self, entities)
         self.update_animation(new_entities)
 
+        print(movement)
         if self.is_alive:
             if self.init_state:
                 if self.state == 'IDLING':
@@ -159,8 +161,13 @@ class Player():
                 elif self.state == 'FIRING':
                     self.init_state = False
                     self.set_action(Animation_type.Throwing_in_The_Air)
-            self.rect = self.move(
-                self.rect, movement, time)
+
+            if stage == 'finish':
+                cut_scene_manager.start_cut_scene(
+                    CutSceneOne(self, self.update_time))
+            else:
+                self.rect = self.move(
+                    self.rect, movement, time)
 
             self.regenerate_mana(self.mana_regeneration)
 

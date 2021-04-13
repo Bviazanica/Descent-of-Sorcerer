@@ -15,9 +15,10 @@ from data.globals.globals import *
 from data.toggle_music import Pause
 from data.gameobjects.vector2 import Vector2
 from data.objects.items.potion import Potion
+from data.cut_scenes import CutSceneManager
 
 # window & canvas
-window = pygame.display.set_mode(SCREEN_SIZE)
+window = pygame.display.set_mode(SCREEN_SIZE, pygame.RESIZABLE)
 canvas = pygame.Surface((SCREEN_SIZE[0], SCREEN_SIZE[1]))
 
 # setup
@@ -26,6 +27,8 @@ pygame.mixer.pre_init(44100, 16, 2, 4096)
 mixer.init()
 pygame.init()
 
+# cut scenes
+cut_scene_manager = CutSceneManager(canvas)
 # Titles
 pygame.display.set_caption("Game")
 
@@ -53,60 +56,62 @@ lightning_icon = pygame.image.load(
 decoy_icon = pygame.image.load(
     'data/images/icons/decoy_big_icon.jpg')
 
-entities = []
-items = []
-mobs = []
+
+# states of game
 stages = {'tutorial': 'tutorial', 'starting': 'starting',
           'fighting': 'fighting', 'ending': 'ending', 'upgrading': 'upgrading', 'discovering': 'discovering', 'finish': 'finish'}
+#mechanics in tutorial
 tutorial_stages = ['movement',  'attacks', 'game', 'pause']
 
 tutorial = True
-paused = False
 clickable = True
-stage_loading_time = 3000
-wave_number = 0
-boss_fight = False
+
+# music volume and sounds volume
 pygame.mixer.music.set_volume(0.1)
 music_handler = Pause()
 music_handler.set_all_sounds_volume(0.5)
-spawn_cooldown = 15000
 
 
+# main game
 def game():
+    # game initionalization
     load_music('main_background')
     if not music_handler.paused:
         pygame.mixer.music.play(-1, 0.0)
-    global wave_number
+
     available_skills = [fireball_icon, staff_icon]
     skills_icons = show_upgrade_option(available_skills)
-    entities.clear()
-    items.clear()
-    mobs.clear()
+    entities = []
+    items = []
+    mobs = []
     player = Player(400, 200)
     entities.append(player)
-    death_screen_running = False
     camera = Camera(player)
     border = Border(camera, player)
     camera.setmethod(border)
+    death_screen_running = False
+    boss_fight = False
     running = True
+    paused = False
     current_time = 0
     time_before_pause = 0
     enemies_to_defeat = 0
-    wave_number = 4
+    wave_number = 39
     spawn_mobs_number = 4
     total_mobs_per_wave = 2
     max_spawn_mobs_number = 8
     last_spawned_time = 0
     start_upgrade_after_wave = 5
+    stage_loading_time = 3000
+    spawn_cooldown = 15000
     remaining_mobs = 0
     tutorial_text.fill((0, 0, 0, 180))
     boss = []
     amount = 50
-    # tutorial
+
     next_button = Button(
         SCREEN_SIZE[0] - 25, SCREEN_SIZE[1] - 25, 'arrow', pygame.image.load(
             'data/images/button/arrow.png').convert_alpha())
-
     restart_button = Button(SCREEN_SIZE[0]//2, 300, 'menu', pygame.image.load(
         'data/images/button/button.png').convert_alpha())
     menu_button = Button(SCREEN_SIZE[0]//2, 400, 'menu', pygame.image.load(
@@ -125,15 +130,16 @@ def game():
     while running:
         # frame interval
         pygame.mixer.music.set_volume(0.1)
-        global paused
         time_passed = clock.tick(FPS)
         time_passed_seconds = time_passed / 1000.0
         canvas.fill(BLACK)
         current_time += time_passed
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            # keybinds
             if event.type == KEYDOWN and player.is_alive:
                 if event.key == K_ESCAPE:
                     running = False
@@ -146,7 +152,6 @@ def game():
                         time_before_pause = current_time
                     if not paused:
                         current_time = time_before_pause
-
                 if event.key == K_m:
                     music_handler.toggle()
 
@@ -156,11 +161,12 @@ def game():
             if not player.is_alive:
                 if player.death_screen_ready:
                     # death screen menu
-
                     death_screen_running = True
                     load_music('death_screen')
                     if not music_handler.paused:
                         pygame.mixer.music.play(-1, 0.0)
+
+                    # gameover screen loop
                     while death_screen_running:
                         clickable = True
                         canvas.fill((0, 0, 0))
@@ -171,13 +177,13 @@ def game():
                             if event.type == KEYDOWN:
                                 if event.key == K_m:
                                     music_handler.toggle()
-
+                        # restart game
                         if restart_button.draw(canvas):
                             if clickable:
                                 menu_select_sound.play()
-                                entities.clear()
-                                items.clear()
-                                mobs.clear()
+                                entities = []
+                                items = []
+                                mobs = []
 
                                 player = Player(400, 200)
                                 entities.append(player)
@@ -185,7 +191,7 @@ def game():
                                 camera = Camera(player)
                                 border = Border(camera, player)
                                 camera.setmethod(border)
-
+                                amount = 50
                                 current_time = 0
                                 time_before_pause = 0
                                 player.death_screen_ready = False
@@ -196,6 +202,8 @@ def game():
                                 boss_fight = False
                                 enemies_to_defeat = 2
                                 spawn_mobs_number = 4
+                                total_mobs_per_wave = 2
+                                last_spawned_time = 0
                                 load_music('main_background')
                                 available_skills = [fireball_icon, staff_icon]
                                 skills_icons = show_upgrade_option(
@@ -203,7 +211,7 @@ def game():
                                 if not music_handler.paused:
                                     pygame.mixer.music.play(-1, 0.0)
                                 clickable = False
-
+                        # return to menu from game over screen
                         if menu_button.draw(canvas):
                             if clickable:
                                 menu_select_sound.play()
@@ -214,19 +222,28 @@ def game():
                                 if not music_handler.paused:
                                     pygame.mixer.music.play(-1, 0.0)
                                 clickable = False
+                        if stage == stages['finish']:
+                            draw_text('Congratulations', humongous_font_gothikka, WHITE,
+                                      canvas, SCREEN_SIZE[0]//2, 100)
+                            draw_text("You've made it", font_gothikka_big, WHITE,
+                                      canvas, SCREEN_SIZE[0]//2, 200)
+                            draw_text('Start new game', font_gothikka, WHITE,
+                                      canvas, SCREEN_SIZE[0]//2, 300+12)
+                        else:
+                            draw_text('Game over', humongous_font_gothikka, WHITE,
+                                      canvas, SCREEN_SIZE[0]//2, 100)
+                            draw_text('You have reached wave '+str(wave_number), font_gothikka_big, WHITE,
+                                      canvas, SCREEN_SIZE[0]//2, 200)
+                            draw_text('Restart', font_gothikka, WHITE,
+                                      canvas, SCREEN_SIZE[0]//2, 300+12)
 
-                        draw_text('GAME OVER', humongous_font_gothikka, WHITE,
-                                  canvas, SCREEN_SIZE[0]//2, 100)
-                        draw_text('You have reached wave '+str(wave_number), font_gothikka_big, WHITE,
-                                  canvas, SCREEN_SIZE[0]//2, 200)
-                        draw_text('Restart', font_gothikka, WHITE,
-                                  canvas, SCREEN_SIZE[0]//2, 300+12)
                         draw_text('Back to menu', font_gothikka, WHITE,
                                   canvas, SCREEN_SIZE[0]//2, 400+12)
                         window.blit(canvas, (0, 0))
                         pygame.display.update()
 
             else:
+                # Starting stage
                 if stage == stages['starting']:
                     if new_stage:
                         stage_loading_time = 5000
@@ -243,8 +260,9 @@ def game():
                     if current_time - stage_start > stage_loading_time:
                         stage = stages['fighting']
                         new_stage = True
-
+                # fighting stage
                 elif stage == stages['fighting']:
+                    # boss wave
                     if boss_fight:
                         if new_stage:
                             boss = Boss(400, -420)
@@ -256,7 +274,12 @@ def game():
                             if spawn_mobs_number < max_spawn_mobs_number:
                                 spawn_mobs_number += 2
                         if len(mobs) < 1 and not boss.is_alive:
-                            stage = stages['ending']
+                            if wave_number != 40:
+                                stage = stages['ending']
+                            else:
+                                stage = stages['finish']
+                                pygame.mixer.music.stop()
+                                win_sound.play()
                             new_stage = True
                             boss_fight = False
                     elif new_stage:
@@ -270,6 +293,7 @@ def game():
                         new_stage = False
                         mobs.extend(new_mobs)
                         entities.extend(new_mobs)
+                    # normal wave
                     elif not boss_fight:
                         spawn_coords_x = random.choice([-450, 930])
                         desired_coords_offset = 100
@@ -302,72 +326,78 @@ def game():
                         if enemies_to_defeat < 1 and len(mobs) < 1:
                             stage = stages['ending']
                             new_stage = True
+                # ending stage
                 elif stage == stages['ending']:
                     if new_stage:
                         stage_start = current_time
                         wave_complete_sound.play()
                         new_stage = False
+                    # determine when to upgrade skill
                     if current_time - stage_start > stage_loading_time and not player.boosted:
                         if wave_number % 5 == 0:
                             stage = stages['upgrading']
                             new_stage = True
                             paused = True
-
+                        # go to starting state again
                         else:
                             stage = stages['starting']
                             new_stage = True
 
                 # movement
-                if pressed_keys[K_LEFT] or pressed_keys[K_a]:
-                    movement.x = -1
-                    player.facing_positive = False
-                elif pressed_keys[K_RIGHT] or pressed_keys[K_d]:
-                    movement.x = +1
-                    player.facing_positive = True
-                if pressed_keys[K_UP] or pressed_keys[K_w]:
-                    movement.y = -1
-                elif pressed_keys[K_DOWN] or pressed_keys[K_s]:
-                    movement.y = +1
+                if stage != stages['finish']:
+                    if pressed_keys[K_LEFT] or pressed_keys[K_a]:
+                        movement.x = -1
+                        player.facing_positive = False
+                    elif pressed_keys[K_RIGHT] or pressed_keys[K_d]:
+                        movement.x = +1
+                        player.facing_positive = True
+                    if pressed_keys[K_UP] or pressed_keys[K_w]:
+                        movement.y = -1
+                    elif pressed_keys[K_DOWN] or pressed_keys[K_s]:
+                        movement.y = +1
 
-                if (pressed_keys[K_d] or pressed_keys[K_a] or pressed_keys[K_s] or pressed_keys[K_w]
-                        or pressed_keys[K_LEFT] or pressed_keys[K_RIGHT] or pressed_keys[K_UP] or pressed_keys[K_DOWN]) and player.init_state and player.state != player.states['HURTING']:
-                    player.state = player.states['RUNNING']
+                    # player actions & attack states
+                    if (pressed_keys[K_d] or pressed_keys[K_a] or pressed_keys[K_s] or pressed_keys[K_w]
+                            or pressed_keys[K_LEFT] or pressed_keys[K_RIGHT] or pressed_keys[K_UP] or pressed_keys[K_DOWN]) and player.init_state and player.state != player.states['HURTING']:
+                        player.state = player.states['RUNNING']
 
-                if pressed_keys[K_SPACE] and player.mana_points >= player.mana_costs['fireball'] and get_cooldown_ready(player.fireball_time, player.cooldowns['fireball'], current_time):
-                    player.casting = 'fireball'
-                    if player.state == 'RUNNING':
-                        player.state = player.states['RUNNING-FIRING']
-                    else:
-                        player.state = player.states['FIRING']
-                elif player.lightning_learned and pressed_keys[K_c] and player.mana_points >= player.mana_costs['lightning'] and get_cooldown_ready(player.lightning_time, player.cooldowns['lightning'], current_time):
-                    player.casting = 'lightning'
-                    if player.state == 'RUNNING':
-                        player.state = player.states['RUNNING-FIRING']
-                    else:
-                        player.state = player.states['FIRING']
-                elif player.decoy_learned and pressed_keys[K_v] and player.mana_points >= player.mana_costs['decoy'] and get_cooldown_ready(player.decoy_time, player.cooldowns['decoy'], current_time):
-                    player.casting = 'decoy'
-                    if player.state == 'RUNNING':
-                        player.state = player.states['RUNNING-FIRING']
-                    else:
-                        player.state = player.states['FIRING']
+                    if pressed_keys[K_SPACE] and player.mana_points >= player.mana_costs['fireball'] and get_cooldown_ready(player.fireball_time, player.cooldowns['fireball'], current_time):
+                        player.casting = 'fireball'
+                        if player.state == 'RUNNING':
+                            player.state = player.states['RUNNING-FIRING']
+                        else:
+                            player.state = player.states['FIRING']
+                    elif player.lightning_learned and pressed_keys[K_c] and player.mana_points >= player.mana_costs['lightning'] and get_cooldown_ready(player.lightning_time, player.cooldowns['lightning'], current_time):
+                        player.casting = 'lightning'
+                        if player.state == 'RUNNING':
+                            player.state = player.states['RUNNING-FIRING']
+                        else:
+                            player.state = player.states['FIRING']
+                    elif player.decoy_learned and pressed_keys[K_v] and player.mana_points >= player.mana_costs['decoy'] and get_cooldown_ready(player.decoy_time, player.cooldowns['decoy'], current_time):
+                        player.casting = 'decoy'
+                        if player.state == 'RUNNING':
+                            player.state = player.states['RUNNING-FIRING']
+                        else:
+                            player.state = player.states['FIRING']
 
-                if pressed_keys[K_f] and current_time - player.melee_attack_time > player.cooldowns['melee']:
-                    if player.state == 'RUNNING':
-                        player.state = player.states['RUNNING-ATTACKING']
-                    else:
-                        player.state = player.states['ATTACKING']
+                    if pressed_keys[K_f] and current_time - player.melee_attack_time > player.cooldowns['melee']:
+                        if player.state == 'RUNNING':
+                            player.state = player.states['RUNNING-ATTACKING']
+                        else:
+                            player.state = player.states['ATTACKING']
 
-                if not pressed_keys.count(1) and player.state != player.states['HURTING'] and player.state != player.states['DYING']:
-                    player.state = player.states['IDLING']
+                    # player idling
+                    if not pressed_keys.count(1) and player.state != player.states['HURTING'] and player.state != player.states['DYING']:
+                        player.state = player.states['IDLING']
 
-                movement.normalize()
+                    movement.normalize()
+            # update methods for entities
             for entity in entities:
                 if entity.type == 'decoy':
                     entity.update(current_time, entities)
                 elif entity.type == 'player':
                     entity.update(current_time, time_passed_seconds, movement,
-                                  entities, stage)
+                                  entities, stage, cut_scene_manager)
                     if entity.entities_summoned:
                         new_decoys = entity.get_summoned_entities()
                         entities.extend(new_decoys)
@@ -384,7 +414,8 @@ def game():
                 elif entity.type == 'mob':
                     entity.update(current_time, time_passed_seconds, player,
                                   get_entities_to_avoid(entities), stage, boss, entities)
-
+            cut_scene_manager.update(current_time, time_passed_seconds)
+            # clearing defeated mob entities
             for mob in mobs.copy():
                 if not mob.is_alive and mob.init_state:
                     if random.random() > 0.85:
@@ -392,12 +423,14 @@ def game():
                                             mob.hitbox.midbottom, 32, 32)
                         items.append(new_potion)
                     mobs.pop(mobs.index(mob))
+            # clearing defeated en
             for entity in entities.copy():
                 if not entity.is_alive and entity.init_state and entity.type != 'player':
                     if entity.type == 'mob':
                         enemies_to_defeat -= 1
                     entities.pop(entities.index(entity))
 
+            # potions and their effects
             items_collisions = check_collision(player.hitbox, items)
             for item in items_collisions:
                 if item.name == 'health':
@@ -409,20 +442,24 @@ def game():
                 elif item.name == 'invulnerability':
                     item.invulnerability(player, items, current_time)
 
+            # adjust camera to player
             camera.scroll()
         canvas.blit(background, (int(0 - camera.offset.x +
                                      camera.CONST[0]), int(0 - camera.offset.y + camera.CONST[1])))
 
+        # draw potions
         for item in items:
             item.draw(canvas, camera.offset.x, camera.offset.y)
 
-        # sort entities by Y position, from the lowest to highest
+        # sort entities by Y position, from the lowest to highest for illusion of space
         sorted_entities = sorted(
             entities, key=lambda x: x.hitbox.bottom, reverse=False)
 
+        # draw sorted entities
         for entity in sorted_entities:
             entity.draw(canvas, camera.offset.x, camera.offset.y, player)
 
+        # tutorial stage
         if stage == stages['tutorial']:
             canvas.blit(front_decor, (int(0 - camera.offset.x +
                                           camera.CONST[0]), int(0 - camera.offset.y + camera.CONST[1])))
@@ -471,6 +508,7 @@ def game():
             draw_text('Wave '+str(wave_number) + ' completed', humongous_font_gothikka, WHITE,
                       canvas, SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2 - 100)
 
+        # discover stage
         elif stage == stages['discovering']:
             if new_stage:
                 stage_start = current_time
@@ -504,10 +542,13 @@ def game():
                                           camera.CONST[0]), int(0 - camera.offset.y + camera.CONST[1])))
             canvas.blit(tutorial_text, (0, SCREEN_SIZE[1] - 100))
             player.draw_cooldowns(canvas, font_gothikka_bold_numbers)
+        # cooldown and front decor on top layer
         if stage != stages['tutorial'] and stage != stages['discovering']:
             canvas.blit(front_decor, (int(0 - camera.offset.x +
                                           camera.CONST[0]), int(0 - camera.offset.y + camera.CONST[1])))
             player.draw_cooldowns(canvas, font_gothikka_bold_numbers)
+
+        # if upgrading skill or game is paused, cds on top layer
         if paused:
             canvas.blit(dim_screen, (0, 0))
             if stage == stages['upgrading']:
@@ -534,6 +575,7 @@ def game():
                 draw_text('PAUSED', humongous_font_gothikka, WHITE,
                           canvas, SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2)
 
+        cut_scene_manager.draw(font_gothikka_bold)
         window.blit(canvas, (0, 0))
         pygame.display.update()
 
@@ -600,11 +642,11 @@ def main_menu():
         if audio_state_changed:
             if music_handler.paused:
                 toggle_audio_button.image = pygame.image.load(
-                    'data/images/button/new/audio_off.png').convert_alpha()
+                    'data/images/button/audio_off.png').convert_alpha()
 
             else:
                 toggle_audio_button.image = pygame.image.load(
-                    'data/images/button/new/audio_on.png').convert_alpha()
+                    'data/images/button/audio_on.png').convert_alpha()
             audio_state_changed = False
         draw_text('Start new game', font_gothikka, WHITE,
                   canvas, SCREEN_SIZE[0]//2, 100 + 12)
