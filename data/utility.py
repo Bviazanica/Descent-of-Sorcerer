@@ -27,7 +27,7 @@ def is_close(object1, object2, distance):
     return math.hypot(object2.centerx-object1.centerx, object2.centery-object1.centery) < float(distance)
 
 
-def show_upgrade_option(skills_list):
+def upgrade_options(skills_list):
     skills = []
     num = SCREEN_SIZE[0] // len(skills_list)
     x = num // 2

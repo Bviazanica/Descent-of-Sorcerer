@@ -78,7 +78,7 @@ def game():
         pygame.mixer.music.play(-1, 0.0)
 
     available_skills = [fireball_icon, staff_icon]
-    skills_icons = show_upgrade_option(available_skills)
+    skills_icons = upgrade_options(available_skills)
     entities = []
     items = []
     mobs = []
@@ -210,7 +210,7 @@ def game():
                                 last_spawned_time = 0
                                 load_music('main_background')
                                 available_skills = [fireball_icon, staff_icon]
-                                skills_icons = show_upgrade_option(
+                                skills_icons = upgrade_options(
                                     available_skills)
                                 if not music_handler.paused:
                                     pygame.mixer.music.play(-1, 0.0)
@@ -549,7 +549,7 @@ def game():
                                   tutorial_text, SCREEN_SIZE[0]/2, 10)
                         draw_text('To cast Explosive decoy press V', font_gothikka, WHITE,
                                   tutorial_text, SCREEN_SIZE[0]/2, 35)
-                    skills_icons = show_upgrade_option(available_skills)
+                    skills_icons = upgrade_options(available_skills)
 
                 if current_time - stage_start > stage_loading_time:
                     stage = stages['starting']
@@ -573,6 +573,8 @@ def game():
                 draw_text('Choose ability to upgrade', humongous_font_gothikka,
                           WHITE, canvas, SCREEN_SIZE[0]//2, 100)
                 for skill in skills_icons:
+                    pygame.draw.rect(canvas, BLACK,
+                                     (skill.rect.x, skill.rect.y, skill.rect.width, skill.rect.height), 5)
                     if skill.draw(canvas):
                         if clickable:
                             upgrade_skill(skills_icons.index(skill), player)
