@@ -108,6 +108,7 @@ def game():
     boss = []
     amount = 50
     discover_started = 0
+    global tutorial
 
     # cut scenes
     cut_scene_manager = CutSceneManager(canvas)
@@ -121,6 +122,7 @@ def game():
         'data/images/button/button.png').convert_alpha())
 
     if tutorial:
+        tutorial = False
         stage = stages['tutorial']
         tutorial_stage_index = 0
         new_tutorial_stage = True

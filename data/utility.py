@@ -207,6 +207,7 @@ def load_entity_animations():
                     # print(f'{entity_type} & {animation} - {i}')
                     img = pygame.image.load(
                         f'data/images/entities/{entity_type}/{animation}/{i}.png')
+                    img = pygame.transform.smoothscale(img, (img.get_width(), img.get_height()))
                     temp_list.append(img)
 
                 entity_animations.append(temp_list)
@@ -233,9 +234,9 @@ def load_projectile_animations():
                     f'data/images/projectiles/{animation}/{i}.png')
                 if animation == 'fireball':
                     if i < 5:
-                        img = pygame.transform.scale(img, (55, 31))
+                        img = pygame.transform.smoothscale(img, (55, 31))
                     else:
-                        img = pygame.transform.scale(img, (30, 43))
+                        img = pygame.transform.smoothscale(img, (30, 43))
                 temp_list.append(img)
             projectile_animations.append(temp_list)
     return projectile_animations
@@ -253,6 +254,7 @@ def load_spells_animations():
             for i in range(num_of_frames):
                 img = pygame.image.load(
                     f'data/images/spells/{animation}/{i}.png')
+                img = pygame.transform.smoothscale(img, (img.get_width(), img.get_height()))
                 temp_list.append(img)
             spells_animations.append(temp_list)
     return spells_animations

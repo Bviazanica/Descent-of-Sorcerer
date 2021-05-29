@@ -11,7 +11,7 @@ class Item():
         self.name = name
         item_image = pygame.image.load(
             f'data/images/items/{name}_potion.png').convert_alpha()
-        self.image = pygame.transform.scale(item_image, (w, h))
+        self.image = pygame.transform.smoothscale(item_image, (w, h))
 
         self.rect = self.image.get_rect()
 
