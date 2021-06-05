@@ -4,10 +4,8 @@ from data.utility import *
 from pygame.locals import *
 from data.gameobjects.vector2 import Vector2
 
-
 class Projectile(object):
-    def __init__(self, position, direction, desired, projectile_id, damage, speed):
-
+    def __init__(self, position, direction, desired, projectile_id, damage, speed, projectiles_animation_list):
         # id
         self.projectile_id = projectile_id
         self.animation_list = projectiles_animation_list[self.projectile_id]

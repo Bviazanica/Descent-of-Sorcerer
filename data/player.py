@@ -13,7 +13,7 @@ from data.cut_scenes import CutSceneOne
 
 
 class Player():
-    def __init__(self, x, y):
+    def __init__(self, x, y, entities_animation_list):
         self.type = 'player'
         # id
         self.entity_id = 0
@@ -44,19 +44,19 @@ class Player():
 
         # icons for cd's and effects
         self.fireball_icon = pygame.image.load(
-            'data/images/icons/fireball_icon.jpg')
+            'data/images/icons/fireball_icon.jpg').convert_alpha()
         self.staff_icon = pygame.image.load(
-            'data/images/icons/staff_icon.jpg')
+            'data/images/icons/staff_icon.jpg').convert_alpha()
         self.lightning_icon = pygame.image.load(
-            'data/images/icons/lightning_icon.jpg')
+            'data/images/icons/lightning_icon.jpg').convert_alpha()
         self.decoy_icon = pygame.image.load(
-            'data/images/icons/decoy_icon.jpg')
+            'data/images/icons/decoy_icon.jpg').convert_alpha()
         self.spells_icons = [self.fireball_icon, self.staff_icon]
 
         self.invulnerability_icon = pygame.image.load(
             'data/images/icons/invulnerability_icon.png').convert_alpha()
         self.power_icon = pygame.image.load(
-            'data/images/icons/power_icon.png').convert()
+            'data/images/icons/power_icon.png').convert_alpha()
 
         # get sizes of icons
         self.effect_icon_width = self.power_icon.get_width()
@@ -85,7 +85,7 @@ class Player():
 
         self.facing_positive = True
         # cooldowns
-        self.cooldowns = {'melee': 4000, 'fireball': 2000,
+        self.cooldowns = {'melee': 4000, 'fireball': 1500,
                           'lightning': 10000, 'decoy': 20000}
         # mana costs
         self.mana_costs = {'fireball': 35,
@@ -108,7 +108,7 @@ class Player():
         self.new_entities = []
         # projectiles
         self.projectiles = []
-        self.projectile_damage = 40
+        self.projectile_damage = 60
         self.projectile_speed = 400
 
         # healthpoints
@@ -136,10 +136,10 @@ class Player():
         self.entities_summoned = False
         self.casting = ''
 
-    def update(self, time_passed, time, movement, entities, stage, cut_scene_manager):
+    def update(self, time_passed, time, movement, entities, stage, cut_scene_manager, projectiles_animation_list):
         self.update_time = time_passed
         new_entities = new_list_without_self(self, entities)
-        self.update_animation(new_entities)
+        self.update_animation(new_entities, projectiles_animation_list)
 
         # state management
         if self.is_alive:
@@ -331,7 +331,7 @@ class Player():
             hit_sound.play()
 
     # animations of player
-    def update_animation(self, new_entities):
+    def update_animation(self, new_entities, projectiles_animation_list):
         ANIMATION_COOLDOWN = 50
         # update image depending on current frame
         self.image = self.animation_list[self.action][self.frame_index]
@@ -347,7 +347,7 @@ class Player():
 
         if (self.action == int(Animation_type.Throwing_in_The_Air) or self.action == int(Animation_type.Run_Throwing)) and self.frame_index == 2 and self.ready_to_fire:
             if self.casting == 'fireball':
-                self.cast_fireball()
+                self.cast_fireball(projectiles_animation_list)
                 self.ready_to_fire = False
             elif self.casting == 'lightning':
                 self.cast_lightning()
@@ -408,17 +408,17 @@ class Player():
             self.regenerate_mana(self.meele_mana_regeneration)
 
     # fireball
-    def cast_fireball(self):
+    def cast_fireball(self, projectiles_animation_list):
         random.choice([fireball_cast_sound, fireball_cast2_sound]).play()
         self.fireball_time = self.update_time
         if self.facing_positive:
             direction = 1
             projectile = Projectile(
-                Vector2(self.hitbox.x + self.hitbox.w, self.hitbox.centery), direction, Vector2(0, 0), 1, self.projectile_damage, self.projectile_speed)
+                Vector2(self.hitbox.x + self.hitbox.w, self.hitbox.centery), direction, Vector2(0, 0), 1, self.projectile_damage, self.projectile_speed, projectiles_animation_list)
         else:
             direction = -1
             projectile = Projectile(
-                Vector2(self.hitbox.x, self.hitbox.centery), direction, Vector2(0, 0), 1, self.projectile_damage, self.projectile_speed)
+                Vector2(self.hitbox.x, self.hitbox.centery), direction, Vector2(0, 0), 1, self.projectile_damage, self.projectile_speed, projectiles_animation_list)
 
         self.projectiles.append(projectile)
         self.mana_points -= self.mana_costs['fireball']

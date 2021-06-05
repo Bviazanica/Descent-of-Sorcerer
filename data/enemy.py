@@ -8,7 +8,7 @@ Vector2 = pygame.math.Vector2
 
 
 class Enemy():
-    def __init__(self, x, y, spawned):
+    def __init__(self, x, y, spawned, entities_animation_list):
         self.type = 'mob'
 
         # id

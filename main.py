@@ -3,6 +3,7 @@ import os
 import sys
 import pygame
 import random
+
 from data.utility import *
 from data.boss import Boss
 from data.button import Button
@@ -23,19 +24,24 @@ canvas = pygame.Surface((SCREEN_SIZE[0], SCREEN_SIZE[1]))
 
 # setup
 clock = pygame.time.Clock()
-pygame.mixer.pre_init(44100, 16, 2, 4096)
+pygame.mixer.pre_init(48000, -16, 1, 1024)
 mixer.init()
 pygame.init()
 
+# load animations
+entities_animation_list = load_entity_animations()
+projectiles_animation_list = load_projectile_animations()
+spells_animation_list = load_spells_animations()
+
 # Titles
-pygame.display.set_caption("Game")
+pygame.display.set_caption("Mage Arena")
 
 pygame.mouse.set_cursor(*pygame.cursors.tri_left)
 # background
 background = pygame.image.load(
-    'data/images/backgrounds/background.png').convert()
+    'data/images/backgrounds/background.png').convert_alpha()
 front_decor = pygame.image.load(
-    'data/images/backgrounds/front_decor.png').convert()
+    'data/images/backgrounds/front_decor.png').convert_alpha()
 bgWidth = background.get_width()
 bgHeight = background.get_height()
 # dim screen
@@ -46,13 +52,13 @@ tutorial_text.fill((0, 0, 0, 180))
 
 # upgrade images
 fireball_icon = (pygame.image.load(
-    'data/images/icons/fireball_big_icon.jpg'))
+    'data/images/icons/fireball_big_icon.jpg')).convert_alpha()
 staff_icon = pygame.image.load(
-    'data/images/icons/staff_big_icon.jpg')
+    'data/images/icons/staff_big_icon.jpg').convert_alpha()
 lightning_icon = pygame.image.load(
-    'data/images/icons/lightning_big_icon.jpg')
+    'data/images/icons/lightning_big_icon.jpg').convert_alpha()
 decoy_icon = pygame.image.load(
-    'data/images/icons/decoy_big_icon.jpg')
+    'data/images/icons/decoy_big_icon.jpg').convert_alpha()
 
 
 # states of game
@@ -82,7 +88,7 @@ def game():
     entities = []
     items = []
     mobs = []
-    player = Player(400, 200)
+    player = Player(400, 200, entities_animation_list)
     entities.append(player)
     camera = Camera(player)
     border = Border(camera, player)
@@ -94,7 +100,7 @@ def game():
     current_time = 0
     time_before_pause = 0
     enemies_to_defeat = 0
-    wave_number = 0
+    wave_number = 4
     final_wave = 30
     spawn_mobs_number = 4
     total_mobs_per_wave = 2
@@ -190,7 +196,7 @@ def game():
                                 items = []
                                 mobs = []
 
-                                player = Player(400, 200)
+                                player = Player(400, 200, entities_animation_list)
                                 entities.append(player)
 
                                 camera = Camera(player)
@@ -274,7 +280,7 @@ def game():
                     # boss wave
                     if boss_fight:
                         if new_stage:
-                            boss = Boss(400, -420)
+                            boss = Boss(400, -420, entities_animation_list)
                             boss.desired_appear = Vector2(
                                 boss.rect.centerx, 100)
                             upgrade_boss(boss, wave_number)
@@ -298,7 +304,7 @@ def game():
                         if spawn_coords_x > 0:
                             desired_coords_offset *= -1
                         new_mobs = summon(Enemy, spawn_coords_x, 50, spawn_mobs_number,
-                                          wave_number, desired_coords_offset, True, start_upgrade_after_wave)
+                                          wave_number, desired_coords_offset, True, start_upgrade_after_wave, entities_animation_list)
                         new_stage = False
                         mobs.extend(new_mobs)
                         entities.extend(new_mobs)
@@ -315,25 +321,25 @@ def game():
                                 last_spawned_time = current_time
 
                                 new_mobs = summon(Enemy, spawn_coords_x, 50, spawn_mobs_number,
-                                                  wave_number, desired_coords_offset, True, start_upgrade_after_wave)
+                                                  wave_number, desired_coords_offset, True, start_upgrade_after_wave, entities_animation_list)
                             elif enemies_to_defeat >= spawn_mobs_number//2:
                                 last_spawned_time = current_time
                                 new_mobs = summon(Enemy, spawn_coords_x, 50, spawn_mobs_number//2,
-                                                  wave_number, desired_coords_offset, True, start_upgrade_after_wave)
+                                                  wave_number, desired_coords_offset, True, start_upgrade_after_wave, entities_animation_list)
                             mobs.extend(new_mobs)
                             entities.extend(new_mobs)
                         elif remaining_mobs >= spawn_mobs_number and current_time - last_spawned_time > spawn_cooldown:
                             last_spawned_time = current_time
 
                             new_mobs = summon(Enemy, spawn_coords_x, 50, spawn_mobs_number,
-                                              wave_number, desired_coords_offset, True, start_upgrade_after_wave)
+                                              wave_number, desired_coords_offset, True, start_upgrade_after_wave, entities_animation_list)
                             mobs.extend(new_mobs)
                             entities.extend(new_mobs)
                         elif remaining_mobs < spawn_mobs_number and remaining_mobs > 0 and current_time - last_spawned_time > spawn_cooldown:
                             last_spawned_time = current_time
 
                             new_mobs = summon(Enemy, spawn_coords_x, 50, remaining_mobs,
-                                              wave_number, desired_coords_offset, True, start_upgrade_after_wave)
+                                              wave_number, desired_coords_offset, True, start_upgrade_after_wave, entities_animation_list)
                             mobs.extend(new_mobs)
                             entities.extend(new_mobs)
                         if enemies_to_defeat < 1 and len(mobs) < 1:
@@ -410,14 +416,14 @@ def game():
                     entity.update(current_time, entities)
                 elif entity.type == 'player':
                     entity.update(current_time, time_passed_seconds, movement,
-                                  entities, stage, cut_scene_manager)
+                                  entities, stage, cut_scene_manager, projectiles_animation_list)
                     if entity.entities_summoned:
                         new_decoys = entity.get_summoned_entities()
                         entities.extend(new_decoys)
                         entity.entities_summoned = False
                 elif entity.type == 'boss':
                     entity.update(player, current_time, time_passed_seconds, movement,
-                                  entities, Enemy, stage, wave_number, start_upgrade_after_wave)
+                                  entities, Enemy, stage, wave_number, start_upgrade_after_wave, projectiles_animation_list)
                     if entity.entities_summoned:
                         boss_summons = entity.get_summoned_entities()
                         enemies_to_defeat = len(boss_summons)

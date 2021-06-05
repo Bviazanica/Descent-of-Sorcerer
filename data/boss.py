@@ -7,7 +7,7 @@ Vector2 = pygame.math.Vector2
 
 
 class Boss():
-    def __init__(self, x, y):
+    def __init__(self, x, y, entities_animation_list):
         self.type = 'boss'
 
         # id
@@ -78,13 +78,13 @@ class Boss():
         self.entities_summoned = False
         self.spawn_mobs_number = 3
 
-    def update(self, player, time_passed, tick, movement, entities, Mob, stage, wave_number, start_upgrade_after_wave):
+    def update(self, player, time_passed, tick, movement, entities, Mob, stage, wave_number, start_upgrade_after_wave, projectiles_animation_list):
         self.update_time = time_passed
         new_entities = new_list_without_self(self, entities)
         self.desired = (
             player.hitbox.center - Vector2(self.hitbox.centerx, self.hitbox.centery))
         self.update_animation(player, Mob, wave_number,
-                              start_upgrade_after_wave)
+                              start_upgrade_after_wave, projectiles_animation_list)
 
         if self.is_alive:
             if self.desired[0] <= 0:
@@ -189,17 +189,17 @@ class Boss():
                   display, SCREEN_SIZE[0]-35, 25)
 
     # boss throw
-    def fire(self, target):
+    def fire(self, target, projectiles_animation_list):
         throw_sound.play()
         self.desired = target - \
             Vector2(self.hitbox.centerx, self.hitbox.centery)
         self.desired.normalize_ip()
         if self.desired[0] <= 0:
             projectile = Projectile(
-                (self.hitbox.x, self.hitbox.centery), -1, self.desired, 0, self.projectile_damage, self.projectile_speed)
+                (self.hitbox.x, self.hitbox.centery), -1, self.desired, 0, self.projectile_damage, self.projectile_speed, projectiles_animation_list)
         else:
             projectile = Projectile(
-                (self.hitbox.x + self.hitbox.width, self.hitbox.centery), 1, self.desired, 0, self.projectile_damage, self.projectile_speed)
+                (self.hitbox.x + self.hitbox.width, self.hitbox.centery), 1, self.desired, 0, self.projectile_damage, self.projectile_speed, projectiles_animation_list)
         self.projectiles.append(projectile)
 
     # close aoe attack
@@ -237,7 +237,7 @@ class Boss():
         return self.new_entities
 
     # animations management
-    def update_animation(self, player, Mob, wave_number, start_upgrade_after_wave):
+    def update_animation(self, player, Mob, wave_number, start_upgrade_after_wave, projectiles_animation_list):
         ANIMATION_COOLDOWN = 50
         # update image depending on current frame
         self.image = self.animation_list[self.action][self.frame_index]
@@ -259,7 +259,7 @@ class Boss():
             self.ready_to_attack = False
         if self.action == int(Animation_type.Throwing_in_The_Air) and self.frame_index == 2 and self.ready_to_fire:
             self.orbs_activation_time = self.update_time
-            self.fire(player.hitbox.center)
+            self.fire(player.hitbox.center, projectiles_animation_list)
             self.ready_to_fire = False
         # animation over on different actions
         if self.frame_index >= len(self.animation_list[self.action]):
@@ -281,7 +281,7 @@ class Boss():
                 self.summon_activation_time = self.update_time
                 self.new_entities = summon(
                     Mob, self.hitbox.centerx + random.choice(
-                        [randint(-200, -50), randint(130, 200)]), 50, self.spawn_mobs_number, wave_number, 0, False, start_upgrade_after_wave)
+                        [randint(-200, -50), randint(130, 200)]), 50, self.spawn_mobs_number, wave_number, 0, False, start_upgrade_after_wave, entities_animation_list=)
                 self.entities_summoned = True
                 self.state = self.states['IDLING']
                 self.init_state = True

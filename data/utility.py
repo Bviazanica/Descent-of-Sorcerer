@@ -73,18 +73,18 @@ def boost_attacks(boost_spells, stacks, target):
 
 
 # boss summonings
-def summon(object, x, y, number, wave_number, x_to_destination, spawned, start_upgrade_after_wave):
+def summon(object, x, y, number, wave_number, x_to_destination, spawned, start_upgrade_after_wave, entities_animation_list):
     mobs = []
     col = 0
     x_offset = 125*int(x/abs(x))
     y_offset = 125
     for mob in range(number):
         if is_number_even(mob):
-            new_mob = object(x + (x_offset*col), y, spawned)
+            new_mob = object(x + (x_offset*col), y, spawned, entities_animation_list)
             new_mob.desired = Vector2(x + x_to_destination, y)
 
         else:
-            new_mob = object(x + (x_offset*col), y + y_offset, spawned)
+            new_mob = object(x + (x_offset*col), y + y_offset, spawned, entities_animation_list)
             new_mob.desired = Vector2(
                 x + x_to_destination, y+y_offset)
             col += 1
@@ -206,7 +206,7 @@ def load_entity_animations():
                 for i in range(num_of_frames):
                     # print(f'{entity_type} & {animation} - {i}')
                     img = pygame.image.load(
-                        f'data/images/entities/{entity_type}/{animation}/{i}.png')
+                        f'data/images/entities/{entity_type}/{animation}/{i}.png').convert_alpha()
                     img = pygame.transform.smoothscale(img, (img.get_width(), img.get_height()))
                     temp_list.append(img)
 
@@ -231,7 +231,7 @@ def load_projectile_animations():
             for i in range(num_of_frames):
                 # print(f'{entity_type} & {animation} - {i}')
                 img = pygame.image.load(
-                    f'data/images/projectiles/{animation}/{i}.png')
+                    f'data/images/projectiles/{animation}/{i}.png').convert_alpha()
                 if animation == 'fireball':
                     if i < 5:
                         img = pygame.transform.smoothscale(img, (55, 31))
@@ -253,14 +253,8 @@ def load_spells_animations():
 
             for i in range(num_of_frames):
                 img = pygame.image.load(
-                    f'data/images/spells/{animation}/{i}.png')
+                    f'data/images/spells/{animation}/{i}.png').convert_alpha()
                 img = pygame.transform.smoothscale(img, (img.get_width(), img.get_height()))
                 temp_list.append(img)
             spells_animations.append(temp_list)
     return spells_animations
-
-
-# load animations
-entities_animation_list = load_entity_animations()
-projectiles_animation_list = load_projectile_animations()
-spells_animation_list = load_spells_animations()
