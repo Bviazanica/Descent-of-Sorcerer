@@ -783,7 +783,8 @@ def show_credits():
 
         draw_text('Credits', font_gothikka_big, WHITE,
                   canvas, SCREEN_SIZE[0]//2, 100)
-
+        draw_text('in progress', font_gothikka, WHITE,
+                  canvas, SCREEN_SIZE[0]//2, SCREEN_SIZE[1]//2)
         window.blit(canvas, (0, 0))
         pygame.display.update()
 
