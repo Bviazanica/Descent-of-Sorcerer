@@ -78,13 +78,13 @@ class Boss():
         self.entities_summoned = False
         self.spawn_mobs_number = 3
 
-    def update(self, player, time_passed, tick, movement, entities, Mob, stage, wave_number, start_upgrade_after_wave, projectiles_animation_list):
+    def update(self, player, time_passed, tick, movement, entities, Mob, stage, wave_number, start_upgrade_after_wave, projectiles_animation_list,entities_animation_list):
         self.update_time = time_passed
         new_entities = new_list_without_self(self, entities)
         self.desired = (
             player.hitbox.center - Vector2(self.hitbox.centerx, self.hitbox.centery))
         self.update_animation(player, Mob, wave_number,
-                              start_upgrade_after_wave, projectiles_animation_list)
+                              start_upgrade_after_wave, projectiles_animation_list,entities_animation_list)
 
         if self.is_alive:
             if self.desired[0] <= 0:
@@ -237,7 +237,7 @@ class Boss():
         return self.new_entities
 
     # animations management
-    def update_animation(self, player, Mob, wave_number, start_upgrade_after_wave, projectiles_animation_list):
+    def update_animation(self, player, Mob, wave_number, start_upgrade_after_wave, projectiles_animation_list, entities_animation_list):
         ANIMATION_COOLDOWN = 50
         # update image depending on current frame
         self.image = self.animation_list[self.action][self.frame_index]
@@ -281,7 +281,7 @@ class Boss():
                 self.summon_activation_time = self.update_time
                 self.new_entities = summon(
                     Mob, self.hitbox.centerx + random.choice(
-                        [randint(-200, -50), randint(130, 200)]), 50, self.spawn_mobs_number, wave_number, 0, False, start_upgrade_after_wave, entities_animation_list=)
+                        [randint(-200, -50), randint(130, 200)]), 50, self.spawn_mobs_number, wave_number, 0, False, start_upgrade_after_wave,entities_animation_list)
                 self.entities_summoned = True
                 self.state = self.states['IDLING']
                 self.init_state = True

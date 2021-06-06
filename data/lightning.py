@@ -4,7 +4,7 @@ from pygame.locals import *
 
 
 class Lightning():
-    def __init__(self, pos, name, spell_id, direction, offset, damage):
+    def __init__(self, pos, name, spell_id, direction, offset, damage, spells_animation_list):
         self.name = name
         self.spell_id = spell_id
         self.animation_list = spells_animation_list[self.spell_id]

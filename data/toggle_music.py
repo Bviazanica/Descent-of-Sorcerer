@@ -2,8 +2,6 @@ import pygame
 from data.globals.globals import *
 
 # music, sounds and volume handling
-
-
 class Pause(object):
 
     def __init__(self):

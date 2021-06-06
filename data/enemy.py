@@ -29,6 +29,7 @@ class Enemy():
         # flee timer
         self.flee_time = 0
         # image properties
+        
         self.image = self.animation_list[self.action][self.frame_index]
         self.image_height = self.image.get_height()
         self.image_width = self.image.get_width()

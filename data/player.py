@@ -136,10 +136,10 @@ class Player():
         self.entities_summoned = False
         self.casting = ''
 
-    def update(self, time_passed, time, movement, entities, stage, cut_scene_manager, projectiles_animation_list):
+    def update(self, time_passed, time, movement, entities, stage, cut_scene_manager, projectiles_animation_list, spells_animation_list):
         self.update_time = time_passed
         new_entities = new_list_without_self(self, entities)
-        self.update_animation(new_entities, projectiles_animation_list)
+        self.update_animation(new_entities, projectiles_animation_list,spells_animation_list)
 
         # state management
         if self.is_alive:
@@ -242,6 +242,7 @@ class Player():
 
         pygame.draw.rect(display, RED,
                          (5, 5, self.hp_bar_width, 20))
+        
         healthbar_width = int(
             self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points)))
         if self.is_alive:
@@ -262,6 +263,7 @@ class Player():
                              (x, y, self.effect_icon_width, self.effect_icon_height), 3)
             display.blit(effect, (x, y))
             x += 40
+
 
     # cooldowns of abilities and their effects
     def draw_cooldowns(self, display, font):
@@ -331,7 +333,7 @@ class Player():
             hit_sound.play()
 
     # animations of player
-    def update_animation(self, new_entities, projectiles_animation_list):
+    def update_animation(self, new_entities, projectiles_animation_list, spells_animation_list):
         ANIMATION_COOLDOWN = 50
         # update image depending on current frame
         self.image = self.animation_list[self.action][self.frame_index]
@@ -350,7 +352,7 @@ class Player():
                 self.cast_fireball(projectiles_animation_list)
                 self.ready_to_fire = False
             elif self.casting == 'lightning':
-                self.cast_lightning()
+                self.cast_lightning(spells_animation_list)
                 self.ready_to_fire = False
             elif self.casting == 'decoy':
                 self.cast_decoy()
@@ -425,17 +427,17 @@ class Player():
         self.ready_to_fire = False
 
     # lightning
-    def cast_lightning(self):
+    def cast_lightning(self,spells_animation_list):
         lightning_sound.play()
         self.lightning_time = self.update_time
         if self.facing_positive:
             direction = 1
             lightning = Lightning(
-                Vector2(self.hitbox.x, self.hitbox.centery - 320), 'lightning', 0, direction, Vector2(self.rect.width, self.rect.height), self.lightning_damage)
+                Vector2(self.hitbox.x, self.hitbox.centery - 320), 'lightning', 0, direction, Vector2(self.rect.width, self.rect.height), self.lightning_damage,spells_animation_list)
         else:
             direction = -1
             lightning = Lightning(
-                Vector2(self.hitbox.x - 250 + self.rect.w, self.hitbox.centery - 320), 'lightning', 0, direction, Vector2(self.rect.width, self.rect.height), self.lightning_damage)
+                Vector2(self.hitbox.x - 250 + self.rect.w, self.hitbox.centery - 320), 'lightning', 0, direction, Vector2(self.rect.width, self.rect.height), self.lightning_damage,spells_animation_list)
 
         lightning.ready = True
         self.lightnings.append(lightning)

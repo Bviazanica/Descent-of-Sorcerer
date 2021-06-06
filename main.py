@@ -21,12 +21,11 @@ from data.cut_scenes import CutSceneManager
 # window & canvas
 window = pygame.display.set_mode(SCREEN_SIZE, pygame.RESIZABLE)
 canvas = pygame.Surface((SCREEN_SIZE[0], SCREEN_SIZE[1]))
-
+pygame.mixer.pre_init(48000, 16, 2, 4096)
 # setup
 clock = pygame.time.Clock()
-pygame.mixer.pre_init(48000, -16, 1, 1024)
-mixer.init()
 pygame.init()
+pygame.mixer.init(48000,  16, 2, 4096, 'Name', 0)
 
 # load animations
 entities_animation_list = load_entity_animations()
@@ -60,6 +59,14 @@ lightning_icon = pygame.image.load(
 decoy_icon = pygame.image.load(
     'data/images/icons/decoy_big_icon.jpg').convert_alpha()
 
+#health and mana
+health_icon = pygame.image.load(
+    'data/images/icons/health_icon.png').convert_alpha()
+mana_icon = pygame.image.load(
+    'data/images/icons/mana_icon.png').convert_alpha()
+
+health_icon = pygame.transform.smoothscale(health_icon, (25, 25))
+mana_icon = pygame.transform.smoothscale(mana_icon, (16, 30))
 
 # states of game
 stages = {'tutorial': 'tutorial', 'starting': 'starting',
@@ -416,14 +423,14 @@ def game():
                     entity.update(current_time, entities)
                 elif entity.type == 'player':
                     entity.update(current_time, time_passed_seconds, movement,
-                                  entities, stage, cut_scene_manager, projectiles_animation_list)
+                                  entities, stage, cut_scene_manager, projectiles_animation_list,spells_animation_list)
                     if entity.entities_summoned:
                         new_decoys = entity.get_summoned_entities()
                         entities.extend(new_decoys)
                         entity.entities_summoned = False
                 elif entity.type == 'boss':
                     entity.update(player, current_time, time_passed_seconds, movement,
-                                  entities, Enemy, stage, wave_number, start_upgrade_after_wave, projectiles_animation_list)
+                                  entities, Enemy, stage, wave_number, start_upgrade_after_wave, projectiles_animation_list,entities_animation_list)
                     if entity.entities_summoned:
                         boss_summons = entity.get_summoned_entities()
                         enemies_to_defeat = len(boss_summons)
@@ -479,6 +486,8 @@ def game():
         for entity in sorted_entities:
             entity.draw(canvas, camera.offset.x, camera.offset.y, player)
 
+        canvas.blit(health_icon, (0, 0))
+        canvas.blit(mana_icon, (0, 20))
         # tutorial stage
         if stage == stages['tutorial']:
             canvas.blit(front_decor, (int(0 - camera.offset.x +
