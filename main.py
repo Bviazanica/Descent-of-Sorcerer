@@ -624,8 +624,9 @@ def game():
                           canvas, SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2)
 
         cut_scene_manager.draw(font_gothikka_bold)
-        window.blit(canvas, (0, 0))
-        pygame.display.update()
+        if running:
+            window.blit(canvas, (0, 0))
+            pygame.display.update()
 
 
 def main_menu():
