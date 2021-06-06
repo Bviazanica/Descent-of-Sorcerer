@@ -79,10 +79,7 @@ class CutSceneOne:
             )
 
 # manager for cutscenes
-
-
 class CutSceneManager:
-
     def __init__(self, screen):
         self.cut_scenes_complete = []
         self.cut_scene = None

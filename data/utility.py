@@ -47,6 +47,7 @@ def upgrade_skill(index, player):
     if index == 1:
         player.melee_damage += 20
         player.meele_mana_regeneration += 10
+        player.cooldowns['melee'] -= 500
     if index == 2:
         player.lightning_damage += 20
         player.cooldowns['lightning'] -= 1000
@@ -105,20 +106,20 @@ def is_number_even(num):
 
 
 def upgrade_mobs(target, wave_number, first_upgraded_wave):
-    target.damage += (wave_number - first_upgraded_wave)*3
+    target.damage += (wave_number - first_upgraded_wave)*2
     target.max_hp += (wave_number - first_upgraded_wave)*5
     target.health_points += (wave_number - first_upgraded_wave)*5
 
 
 def upgrade_boss(target, wave_number):
     target.whirlwind_damage += (wave_number//5)*5
-    target.max_hp += ((wave_number//5) * 250)
-    target.health_points += ((wave_number//5) * 250)
-    target.projectile_damage += ((wave_number//5) * 5)
-    target.projectile_speed += ((wave_number//5) * 200)
+    target.max_hp += ((wave_number//5) * 200)
+    target.health_points += ((wave_number//5) * 200)
+    target.projectile_damage += ((wave_number//5) * 3)
+    target.projectile_speed += ((wave_number//5) * 50)
 
     new_cooldown_summon = target.cooldowns['summon']-(2000 * (wave_number//5))
-    new_cooldown_orbs = target.cooldowns['orbs'] - (200 * (wave_number//5))
+    new_cooldown_orbs = target.cooldowns['orbs'] - (100 * (wave_number//5))
     new_cooldown_whirlwind = target.cooldowns['whirlwind'] - (
         1000 * (wave_number//5))
     if new_cooldown_summon >= 9000:

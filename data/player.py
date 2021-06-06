@@ -85,7 +85,7 @@ class Player():
 
         self.facing_positive = True
         # cooldowns
-        self.cooldowns = {'melee': 4000, 'fireball': 1500,
+        self.cooldowns = {'melee': 4000, 'fireball': 2000,
                           'lightning': 10000, 'decoy': 20000}
         # mana costs
         self.mana_costs = {'fireball': 35,
@@ -93,14 +93,14 @@ class Player():
         # player cooldownsdd
         self.melee_attack_time = self.fireball_time = self.lightning_time = self.decoy_time = -100000
         # attack damage
-        self.melee_damage = 35
+        self.melee_damage = 50
         self.meele_mana_regeneration = 20
         # speed
         self.speed = 250
 
         # spells
         self.lightnings = []
-        self.decoy_damage = 150
+        self.decoy_damage = 130
         self.lightning_damage = 90
 
         self.lightning_learned = False
@@ -136,10 +136,10 @@ class Player():
         self.entities_summoned = False
         self.casting = ''
 
-    def update(self, time_passed, time, movement, entities, stage, cut_scene_manager, projectiles_animation_list, spells_animation_list):
+    def update(self, time_passed, time, movement, entities, stage, cut_scene_manager, entities_animation_list,projectiles_animation_list, spells_animation_list):
         self.update_time = time_passed
         new_entities = new_list_without_self(self, entities)
-        self.update_animation(new_entities, projectiles_animation_list,spells_animation_list)
+        self.update_animation(new_entities,entities_animation_list, projectiles_animation_list,spells_animation_list)
 
         # state management
         if self.is_alive:
@@ -238,31 +238,32 @@ class Player():
                                                                            offset_x, self.rect.y - offset_y))
 
         pygame.draw.rect(display, BLACK,
-                         (4, 4, self.hp_bar_width+2, 22), 1)
+                         (15, 9, self.hp_bar_width+2, 22), 1)
 
         pygame.draw.rect(display, RED,
-                         (5, 5, self.hp_bar_width, 20))
+                         (16, 10, self.hp_bar_width, 20))
         
         healthbar_width = int(
             self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points)))
         if self.is_alive:
             pygame.draw.rect(display, GREEN,
-                             (5, 5, healthbar_width, 20))
+                             (16, 10, healthbar_width, 20))
 
         mana_bar_width = int(
             self.mana_bar_width - ((self.mana_bar_width/self.max_mp)*(self.max_mp - self.mana_points)))
         pygame.draw.rect(display, BLACK,
-                         (4, 29, self.mana_bar_width+2, 12), 1)
+                         (15, 39, self.mana_bar_width+2, 12), 1)
         pygame.draw.rect(display, BLUE,
-                         (5, 30, mana_bar_width, 10))
+                         (16, 40, mana_bar_width, 10))
 
-        x = 5
-        y = 45
+        x = 15
+        y = 55
         for effect in self.effects:
             pygame.draw.rect(display, BLACK,
                              (x, y, self.effect_icon_width, self.effect_icon_height), 3)
             display.blit(effect, (x, y))
             x += 40
+
 
 
     # cooldowns of abilities and their effects
@@ -333,7 +334,7 @@ class Player():
             hit_sound.play()
 
     # animations of player
-    def update_animation(self, new_entities, projectiles_animation_list, spells_animation_list):
+    def update_animation(self, new_entities, entities_animation_list, projectiles_animation_list, spells_animation_list):
         ANIMATION_COOLDOWN = 50
         # update image depending on current frame
         self.image = self.animation_list[self.action][self.frame_index]
@@ -355,7 +356,7 @@ class Player():
                 self.cast_lightning(spells_animation_list)
                 self.ready_to_fire = False
             elif self.casting == 'decoy':
-                self.cast_decoy()
+                self.cast_decoy(entities_animation_list)
                 self.ready_to_fire = False
             elif self.casting == 'blizzard':
                 self.cast_blizzard()
@@ -445,18 +446,18 @@ class Player():
         self.ready_to_fire = False
 
     # decoy
-    def cast_decoy(self):
+    def cast_decoy(self, entities_animation_list):
         decoy_sound.play()
         self.decoy_time = self.update_time
         self.new_entities.clear()
         if self.facing_positive:
             direction = 1
             decoy = Decoy(
-                Vector2(self.hitbox.x + self.rect.w - self.hitbox_x_offset, self.rect.y), self.facing_positive, self.decoy_damage)
+                Vector2(self.hitbox.x + self.rect.w - self.hitbox_x_offset, self.rect.y), self.facing_positive, self.decoy_damage, entities_animation_list)
         else:
             direction = -1
             decoy = Decoy(
-                Vector2(self.hitbox.x - self.hitbox_x_offset - self.rect.w, self.rect.y), self.facing_positive, self.decoy_damage)
+                Vector2(self.hitbox.x - self.hitbox_x_offset - self.rect.w, self.rect.y), self.facing_positive, self.decoy_damage,entities_animation_list)
 
         self.entities_summoned = True
         self.new_entities.append(decoy)

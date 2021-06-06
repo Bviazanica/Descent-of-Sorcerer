@@ -19,9 +19,8 @@ from data.objects.items.potion import Potion
 from data.cut_scenes import CutSceneManager
 
 # window & canvas
-window = pygame.display.set_mode(SCREEN_SIZE, pygame.RESIZABLE)
+window = pygame.display.set_mode(SCREEN_SIZE)
 canvas = pygame.Surface((SCREEN_SIZE[0], SCREEN_SIZE[1]))
-pygame.mixer.pre_init(48000, 16, 2, 4096)
 # setup
 clock = pygame.time.Clock()
 pygame.init()
@@ -66,8 +65,17 @@ mana_icon = pygame.image.load(
     'data/images/icons/mana_icon.png').convert_alpha()
 
 health_icon = pygame.transform.smoothscale(health_icon, (25, 25))
-mana_icon = pygame.transform.smoothscale(mana_icon, (16, 30))
+mana_icon = pygame.transform.smoothscale(mana_icon, (15, 22))
 
+arrow_button = pygame.image.load('data/images/button/arrow.png').convert_alpha()
+main_button = pygame.image.load('data/images/button/button.png').convert_alpha()
+audio_on_button = pygame.image.load('data/images/button/audio_on.png').convert_alpha()
+audio_off_button = pygame.image.load('data/images/button/audio_off.png').convert_alpha()
+
+arrow_button = pygame.transform.smoothscale(arrow_button, (40, 30))
+main_button = pygame.transform.smoothscale(main_button, (200,50))
+audio_on_button = pygame.transform.smoothscale(audio_on_button, (30,30))
+audio_off_button = pygame.transform.smoothscale(audio_off_button, (30,30))
 # states of game
 stages = {'tutorial': 'tutorial', 'starting': 'starting',
           'fighting': 'fighting', 'ending': 'ending', 'upgrading': 'upgrading', 'discovering': 'discovering', 'finish': 'finish'}
@@ -85,6 +93,9 @@ music_handler.set_all_sounds_volume(0.5)
 
 # main game
 def game():
+    global arrow_button
+    global restart_button
+    global main_button
     # game initionalization
     load_music('main_background')
     if not music_handler.paused:
@@ -107,8 +118,8 @@ def game():
     current_time = 0
     time_before_pause = 0
     enemies_to_defeat = 0
-    wave_number = 4
-    final_wave = 30
+    wave_number = 0
+    final_wave = 25
     spawn_mobs_number = 4
     total_mobs_per_wave = 2
     max_spawn_mobs_number = 8
@@ -127,12 +138,9 @@ def game():
     cut_scene_manager = CutSceneManager(canvas)
 
     next_button = Button(
-        SCREEN_SIZE[0] - 25, SCREEN_SIZE[1] - 25, 'arrow', pygame.image.load(
-            'data/images/button/arrow.png').convert_alpha())
-    restart_button = Button(SCREEN_SIZE[0]//2, 300, 'menu', pygame.image.load(
-        'data/images/button/button.png').convert_alpha())
-    menu_button = Button(SCREEN_SIZE[0]//2, 400, 'menu', pygame.image.load(
-        'data/images/button/button.png').convert_alpha())
+        SCREEN_SIZE[0] - 25, SCREEN_SIZE[1] - 25, 'arrow', arrow_button)
+    restart_button = Button(SCREEN_SIZE[0]//2, 300, 'menu', main_button)
+    menu_button = Button(SCREEN_SIZE[0]//2, 400, 'menu', main_button)
 
     if tutorial:
         tutorial = False
@@ -249,17 +257,17 @@ def game():
                             draw_text("You've made it", font_gothikka_big, WHITE,
                                       canvas, SCREEN_SIZE[0]//2, 200)
                             draw_text('Start new game', font_gothikka, WHITE,
-                                      canvas, SCREEN_SIZE[0]//2, 300+12)
+                                      canvas, SCREEN_SIZE[0]//2, 285)
                         else:
                             draw_text('Game over', humongous_font_gothikka, WHITE,
                                       canvas, SCREEN_SIZE[0]//2, 100)
                             draw_text('You have reached wave '+str(wave_number), font_gothikka_big, WHITE,
                                       canvas, SCREEN_SIZE[0]//2, 200)
                             draw_text('Restart', font_gothikka, WHITE,
-                                      canvas, SCREEN_SIZE[0]//2, 300+12)
+                                      canvas, SCREEN_SIZE[0]//2, 285)
 
                         draw_text('Back to menu', font_gothikka, WHITE,
-                                  canvas, SCREEN_SIZE[0]//2, 400+12)
+                                  canvas, SCREEN_SIZE[0]//2, 385)
                         window.blit(canvas, (0, 0))
                         pygame.display.update()
 
@@ -423,7 +431,7 @@ def game():
                     entity.update(current_time, entities)
                 elif entity.type == 'player':
                     entity.update(current_time, time_passed_seconds, movement,
-                                  entities, stage, cut_scene_manager, projectiles_animation_list,spells_animation_list)
+                                  entities, stage, cut_scene_manager, entities_animation_list,projectiles_animation_list,spells_animation_list)
                     if entity.entities_summoned:
                         new_decoys = entity.get_summoned_entities()
                         entities.extend(new_decoys)
@@ -450,9 +458,16 @@ def game():
                 if not entity.is_alive and entity.init_state and entity.type != 'player':
                     if entity.type == 'mob':
                         enemies_to_defeat -= 1
-                        if random.random() > 0.80:
-                            new_potion = Potion(random.choice(['invulnerability', 'health', 'mana', 'power']),
-                                                entity.hitbox.midbottom, 32, 32)
+                        chance = random.random()
+                        if chance < 0.25:
+                            if chance < 0.10:
+                                new_potion = Potion('health', entity.hitbox.midbottom, 32, 32)
+                            elif chance < 0.17:
+                                new_potion = Potion('mana', entity.hitbox.midbottom, 32, 32)
+                            elif chance < 0.21:
+                                new_potion = Potion('invulnerability', entity.hitbox.midbottom, 32, 32)
+                            elif chance < 0.25:
+                                new_potion = Potion('power', entity.hitbox.midbottom, 32, 32)
                             items.append(new_potion)
                     entities.pop(entities.index(entity))
 
@@ -467,7 +482,6 @@ def game():
                     item.boost(player, items, current_time)
                 elif item.name == 'invulnerability':
                     item.invulnerability(player, items, current_time)
-
             # adjust camera to player
             camera.scroll()
 
@@ -486,8 +500,8 @@ def game():
         for entity in sorted_entities:
             entity.draw(canvas, camera.offset.x, camera.offset.y, player)
 
-        canvas.blit(health_icon, (0, 0))
-        canvas.blit(mana_icon, (0, 20))
+        canvas.blit(health_icon, (5, 6))
+        canvas.blit(mana_icon, (5, 29))
         # tutorial stage
         if stage == stages['tutorial']:
             canvas.blit(front_decor, (int(0 - camera.offset.x +
@@ -615,21 +629,20 @@ def game():
 
 
 def main_menu():
+    global main_button
+    global audio_on_button
+    global audio_off_button
     load_music('menu')
     pygame.mixer.music.play(-1, 0.0)
     # menu
-    game_button = Button(SCREEN_SIZE[0]//2, 100, 'menu', pygame.image.load(
-        'data/images/button/button.png').convert_alpha())
-    controls_button = Button(SCREEN_SIZE[0]//2, 200, 'menu', pygame.image.load(
-        'data/images/button/button.png').convert_alpha())
-    credits_button = Button(SCREEN_SIZE[0]//2, 300, 'menu', pygame.image.load(
-        'data/images/button/button.png').convert_alpha())
-    quit_button = Button(SCREEN_SIZE[0]//2, 400, 'menu', pygame.image.load(
-        'data/images/button/button.png').convert_alpha())
+    game_button = Button(SCREEN_SIZE[0]//2, SCREEN_SIZE[1]*0.5, 'menu', main_button)
+    controls_button = Button(SCREEN_SIZE[0]//2, SCREEN_SIZE[1]*0.6, 'menu', main_button)
+    credits_button = Button(SCREEN_SIZE[0]//2, SCREEN_SIZE[1]*0.7, 'menu', main_button)
+    quit_button = Button(SCREEN_SIZE[0]//2, SCREEN_SIZE[1]*0.8, 'menu', main_button)
     toggle_audio_button = Button(
-        SCREEN_SIZE[0] - 50, SCREEN_SIZE[1] - 50, 'audio', pygame.image.load(
-            'data/images/button/audio_on.png').convert_alpha())
+        SCREEN_SIZE[0] - 50, SCREEN_SIZE[1] - 50, 'audio', audio_on_button)
     audio_state_changed = False
+    clickable = False
     while True:
         time_passed = clock.tick(FPS)
         time_passed_seconds = time_passed / 1000.0
@@ -650,46 +663,51 @@ def main_menu():
         mx, my = pygame.mouse.get_pos()
         if game_button.draw(canvas):
             if clickable:
-                clickable = False
                 menu_select_sound.play()
+                clickable = False
                 game()
+        draw_text('Start new game', font_gothikka, WHITE,
+                  canvas, game_button.rect.centerx, game_button.rect.y + 10)
+        
         if controls_button.draw(canvas):
             if clickable:
-                clickable = False
                 menu_select_sound.play()
+                clickable = False
                 controls()
+        draw_text('Controls', font_gothikka, WHITE,
+                  canvas, controls_button.rect.centerx, controls_button.rect.y + 10)
         if credits_button.draw(canvas):
             if clickable:
-                clickable = False
                 menu_select_sound.play()
+                clickable = False
                 show_credits()
+        draw_text('Credits', font_gothikka, WHITE,
+                  canvas, credits_button.rect.centerx, credits_button.rect.y + 10)
         if quit_button.draw(canvas):
             if clickable:
                 menu_select_sound.play()
+                clickable = False
                 pygame.quit()
                 sys.exit()
+        draw_text('Quit', font_gothikka, WHITE,
+                  canvas, quit_button.rect.centerx, quit_button.rect.y + 10)
         if toggle_audio_button.draw(canvas):
             if clickable:
-                audio_state_changed = music_handler.toggle()
                 clickable = False
+                audio_state_changed = music_handler.toggle()
 
         if audio_state_changed:
             if music_handler.paused:
-                toggle_audio_button.image = pygame.image.load(
-                    'data/images/button/audio_off.png').convert_alpha()
+                toggle_audio_button.image = audio_off_button
 
             else:
-                toggle_audio_button.image = pygame.image.load(
-                    'data/images/button/audio_on.png').convert_alpha()
+                toggle_audio_button.image = audio_on_button
             audio_state_changed = False
-        draw_text('Start new game', font_gothikka, WHITE,
-                  canvas, SCREEN_SIZE[0]//2, 100 + 12)
-        draw_text('Controls', font_gothikka, WHITE,
-                  canvas, SCREEN_SIZE[0]//2, 200 + 12)
-        draw_text('Credits', font_gothikka, WHITE,
-                  canvas, SCREEN_SIZE[0]//2, 300 + 12)
-        draw_text('Quit', font_gothikka, WHITE,
-                  canvas, SCREEN_SIZE[0]//2, 400 + 12)
+            clickable = False
+        
+        draw_text('Game name', font_gothikka_big, WHITE,
+                  canvas, SCREEN_SIZE[0]//2, SCREEN_SIZE[1]*0.1)
+        
         window.blit(canvas, (0, 0))
         pygame.display.update()
 
@@ -763,7 +781,7 @@ def show_credits():
                     music_handler.toggle()
 
         draw_text('Credits', font_gothikka_big, WHITE,
-                  canvas, SCREEN_SIZE[0]//2, 100-10)
+                  canvas, SCREEN_SIZE[0]//2, 100)
 
         window.blit(canvas, (0, 0))
         pygame.display.update()

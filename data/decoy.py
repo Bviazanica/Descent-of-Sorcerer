@@ -5,7 +5,7 @@ from data.gameobjects.vector2 import Vector2
 
 
 class Decoy(object):
-    def __init__(self, position, facing_positive, damage):
+    def __init__(self, position, facing_positive, damage, entities_animation_list):
         self.type = 'decoy'
         self.is_alive = True
         # animations

@@ -178,15 +178,15 @@ class Boss():
                 projectile.draw(display, offset_x, offset_y)
         # healthbar
         pygame.draw.rect(display, BLACK,
-                         (SCREEN_SIZE[0] - 6 - self.hp_bar_width, 4, self.hp_bar_width + 2, 22), 1)
+                         (SCREEN_SIZE[0] - 6 - self.hp_bar_width, 9, self.hp_bar_width + 2, 22), 1)
         healthbar_width = int(
             self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points)))
         if self.is_alive:
             pygame.draw.rect(display, RED,
-                             (SCREEN_SIZE[0] - 5 - healthbar_width, 5, healthbar_width, 20))
+                             (SCREEN_SIZE[0] - 5 - healthbar_width, 10, healthbar_width, 20))
 
         draw_text('Golem', font_gothikka_bold, WHITE,
-                  display, SCREEN_SIZE[0]-35, 25)
+                  display, SCREEN_SIZE[0]-35, 30)
 
     # boss throw
     def fire(self, target, projectiles_animation_list):
