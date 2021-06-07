@@ -3,7 +3,6 @@ import os
 import sys
 import pygame
 import random
-
 from data.utility import *
 from data.boss import Boss
 from data.button import Button
@@ -32,8 +31,10 @@ projectiles_animation_list = load_projectile_animations()
 spells_animation_list = load_spells_animations()
 
 # Titles
-pygame.display.set_caption("Mage Arena")
-
+pygame.display.set_caption("Descent of Sorcerer")
+icon = pygame.image.load(
+    f'data/images/icons/game.png').convert_alpha()
+pygame.display.set_icon(icon)
 pygame.mouse.set_cursor(*pygame.cursors.tri_left)
 # background
 background = pygame.image.load(
@@ -706,8 +707,12 @@ def main_menu():
             audio_state_changed = False
             clickable = False
         
-        draw_text('Game name', font_gothikka_big, WHITE,
+        draw_text('Descent', font_gothikka_big, WHITE,
                   canvas, SCREEN_SIZE[0]//2, SCREEN_SIZE[1]*0.1)
+        draw_text('of', font_gothikka_big, WHITE,
+                  canvas, SCREEN_SIZE[0]//2, SCREEN_SIZE[1]*0.2)
+        draw_text('Sorcerer', font_gothikka_big, WHITE,
+                  canvas, SCREEN_SIZE[0]//2, SCREEN_SIZE[1]*0.3)
         
         window.blit(canvas, (0, 0))
         pygame.display.update()
