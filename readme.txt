@@ -21,11 +21,13 @@ Sounds:
 		- Interface sounds: 'UI Audio', provided by Kenney, obtained from https://www.kenney.nl.
 		- Decoy, Upgrade ability, Upgrade menu: 'Spell Sounds Starter Pack' by p0ss, obtained from https://opengameart.org.
 		- Boss death, Rock throw, Next click, Drink potion, Staff hit: 'RPG sound pack' by artisticdude, obtained from https://opengameart.org.
-		- Select item, Fireball casting, Level completed, Game completed, Mob death: 'Fantasy sound effects library' by Little Robot Sound Factory (www.littlerobotsoundfactory.com), obtained from https://opengameart.org.
+		- Select item, Fireball casting, Level completed, Game completed, Mob death: 'Fantasy sound effects library' 
+		  by Little Robot Sound Factory (www.littlerobotsoundfactory.com), obtained from https://opengameart.org.
 		- Explosion: '2 High quality explosions' by Michel Baradari, obtained from https://opengameart.org/.
 		- Lightning: 'Explosion hit',  obtained from https://mixkit.co/.
 		- Hit, Staff swing: 'Battle sound effects' by artisticdude, obtained from https://opengameart.org/.
-		- Ability learn: '7 Assorted sound effects (Menu, Level up)' by Joth (https://opengameart.org/.users/joth | @Joth_Music | https://twitter.com/Joth_Music ), obtained from https://opengameart.org/.
+		- Ability learn: '7 Assorted sound effects (Menu, Level up)'
+		  by Joth (https://opengameart.org/.users/joth | @Joth_Music | https://twitter.com/Joth_Music ), obtained from https://opengameart.org/.
 	
 	
 Graphics: 
