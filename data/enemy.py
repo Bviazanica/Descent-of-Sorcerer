@@ -126,8 +126,6 @@ class Enemy():
                     if self.state == 'HURTING':
                         self.init_state = False
                         self.set_action(Animation_type.Hurt)
-                    elif self.state == 'IDLING':
-                        self.set_action(Animation_type.Idle_Blinking)
                     elif self.state == 'ATTACKING':
                         self.init_state = False
                         self.set_action(Animation_type.Kicking)
@@ -159,6 +157,7 @@ class Enemy():
             pygame.draw.rect(display, GREEN,
                              (self.hitbox.x -
                               offset_x, self.hitbox.y - 10 - offset_y, int(self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points))), 10))
+
 
     # getting hit
     def hit(self, damage):

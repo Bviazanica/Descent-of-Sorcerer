@@ -461,13 +461,15 @@ def game():
                         enemies_to_defeat -= 1
                         chance = random.random()
                         if chance < 0.25:
+                            new_potion = None
                             if chance < 0.10:
                                 new_potion = Potion('health', entity.hitbox.midbottom, 32, 32)
                             elif chance < 0.17:
                                 new_potion = Potion('mana', entity.hitbox.midbottom, 32, 32)
                             elif chance < 0.21:
                                 new_potion = Potion('invulnerability', entity.hitbox.midbottom, 32, 32)
-                            elif chance < 0.25:
+                                items.append(new_potion)
+                            else:
                                 new_potion = Potion('power', entity.hitbox.midbottom, 32, 32)
                             items.append(new_potion)
                     entities.pop(entities.index(entity))

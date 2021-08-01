@@ -169,7 +169,6 @@ class Boss():
         #     f'SPEED: {self.projectile_speed} DMG: {self.projectile_damage} CD: {self.cooldowns["orbs"]}')
 
     def draw(self, display, offset_x, offset_y, player):
-
         display.blit(pygame.transform.flip(self.image, self.flip, False), (self.rect.x -
                                                                            offset_x, self.rect.y - offset_y))
 
@@ -179,14 +178,17 @@ class Boss():
         # healthbar
         pygame.draw.rect(display, BLACK,
                          (SCREEN_SIZE[0] - 6 - self.hp_bar_width, 9, self.hp_bar_width + 2, 22), 1)
-        healthbar_width = int(
-            self.hp_bar_width - ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points)))
+
+        healthbar_width = int(self.hp_bar_width - 
+            ((self.hp_bar_width/self.max_hp)*(self.max_hp - self.health_points)))
+            
         if self.is_alive:
             pygame.draw.rect(display, RED,
                              (SCREEN_SIZE[0] - 5 - healthbar_width, 10, healthbar_width, 20))
 
         draw_text('Golem', font_gothikka_bold, WHITE,
                   display, SCREEN_SIZE[0]-35, 30)
+        # pygame.draw.rect(display, RED, (self.hitbox.x- offset_x, self.hitbox.y- offset_y, self.hitbox.width, self.hitbox.height), 2)
 
     # boss throw
     def fire(self, target, projectiles_animation_list):

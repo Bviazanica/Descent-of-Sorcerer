@@ -16,7 +16,6 @@ font_gothikka_bold_numbers = pygame.font.Font(
     'data/fonts/Gothikka Bold.ttf', 28)
 font_gothikka_bold_numbers.set_bold(True)
 
-boss_battle_sound = pygame.mixer.Sound('data/sounds/boss_battle.wav')
 boss_hurt_sound = pygame.mixer.Sound('data/sounds/boss_hurt.wav')
 fireball_hit_sound = pygame.mixer.Sound('data/sounds/fireball_hit.wav')
 fireball_cast_sound = pygame.mixer.Sound('data/sounds/fireball_cast.wav')
@@ -40,7 +39,7 @@ upgrade_sound = pygame.mixer.Sound('data/sounds/upgrade.wav')
 ability_learn_sound = pygame.mixer.Sound('data/sounds/ability_learn.wav')
 
 sound_effects = []
-sound_effects.extend([boss_battle_sound,
+sound_effects.extend([
                       boss_hurt_sound,
                       fireball_hit_sound,
                       fireball_cast_sound,

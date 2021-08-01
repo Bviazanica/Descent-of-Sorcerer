@@ -348,7 +348,7 @@ class Player():
             self.animation_time = self.update_time
             self.frame_index += 1
 
-        if (self.action == int(Animation_type.Throwing_in_The_Air) or self.action == int(Animation_type.Run_Throwing)) and self.frame_index == 2 and self.ready_to_fire:
+        if (self.action == int(Animation_type.Throwing_in_The_Air) or self.action == int(Animation_type.Run_Throwing)) and self.frame_index == 0 and self.ready_to_fire:
             if self.casting == 'fireball':
                 self.cast_fireball(projectiles_animation_list)
                 self.ready_to_fire = False
@@ -357,9 +357,6 @@ class Player():
                 self.ready_to_fire = False
             elif self.casting == 'decoy':
                 self.cast_decoy(entities_animation_list)
-                self.ready_to_fire = False
-            elif self.casting == 'blizzard':
-                self.cast_blizzard()
                 self.ready_to_fire = False
         # out of images - resets
         if self.frame_index >= len(self.animation_list[self.action]):
